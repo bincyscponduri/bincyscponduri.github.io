@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        /* Layout - Using dvh for mobile browser bars */
+        /* Layout */
         body {
             height: 100dvh; 
             width: 100vw;
@@ -45,7 +45,6 @@
         /* Bases */
         .base { grid-row: span 6; grid-column: span 6; padding: 12%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; position: relative; border-radius: 4px; transition: all 0.3s; }
         
-        /* LEFT/EXITED STATE */
         .base.left-game { filter: grayscale(100%); opacity: 0.5; }
         .base.left-game::after { content: 'LEFT'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 2rem; font-weight: 900; color: #475569; opacity: 0.8; }
         
@@ -85,7 +84,7 @@
         @keyframes chaos-roll { 0% { transform: rotate3d(1,1,1,0deg); } 100% { transform: rotate3d(1,1,1,360deg); } }
         .dice-red { color: #ef4444; border: 2px solid #fee2e2; } .dice-green { color: #22c55e; border: 2px solid #dcfce7; } .dice-yellow { color: #eab308; border: 2px solid #fef9c3; } .dice-blue { color: #3b82f6; border: 2px solid #dbeafe; }
 
-        /* Floating Chat - Moved higher up */
+        /* Floating Chat */
         #floating-chat-container { position: absolute; bottom: 120px; left: 20px; width: 300px; max-width: 70%; z-index: 100; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
         .chat-bubble-float { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border: 1px solid white; color: #334155; padding: 10px 16px; border-radius: 18px; border-bottom-left-radius: 4px; margin-top: 8px; font-size: 0.95rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px) scale(0.9); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.5s 5.5s forwards; pointer-events: auto; }
         .chat-bubble-float strong { color: #64748b; text-transform: uppercase; font-size: 0.7rem; display: block; margin-bottom: 2px; }
@@ -96,15 +95,19 @@
         .btn-glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.5); transition: all 0.2s; }
         .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); }
         
-        /* FOOTER SAFE AREA FIX */
         .footer-safe {
             padding-bottom: env(safe-area-inset-bottom, 20px);
             margin-bottom: 0;
             background: rgba(255,255,255,0.95);
         }
+        
+        /* Audio Indicators */
+        .speaking-indicator { box-shadow: 0 0 0 3px #22c55e !important; }
     </style>
 </head>
 <body class="text-slate-700">
+
+    <div id="remote-audio-container" class="hidden"></div>
 
     <div id="auth-screen" class="fixed inset-0 z-[60] flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-blue-100">
         <div class="glass-panel p-8 rounded-3xl w-full max-w-sm text-center shadow-xl">
@@ -221,7 +224,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, arrayUnion, collection, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDyftShVByBykSgDi6loVFgu76loF7Ey-M",
@@ -257,10 +260,19 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let myPlayerId = null, roomId = null, roomUnsubscribe = null;
+let myPlayerId = null, roomId = null, roomUnsubscribe = null, signalUnsubscribe = null;
 let currentUser = { name: 'Player', password: '' };
 let sfxEnabled = true;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// --- WEBRTC GLOBALS ---
+let localStream = null;
+let peerConnections = {}; // { targetUserId: RTCPeerConnection }
+const rtcConfig = {
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] // Public STUN server
+};
+let isMicOn = false;
+let isSpeakerOn = true;
 
 const playSound = (type) => {
     if(!sfxEnabled) return;
@@ -321,6 +333,7 @@ async function rejoinSession(code) {
         if(players.some(p => p.id === myPlayerId && p.status !== 'left')) {
             showToast("Rejoining Game...");
             enterLobby(code);
+            initWebRTC(); // Re-init audio listener
         } else {
             localStorage.removeItem('ludo_current_room');
         }
@@ -386,6 +399,175 @@ function createBoard() {
 }
 createBoard();
 
+// --- WEBRTC LOGIC ---
+
+// 1. Initialize Listener for incoming calls/answers
+function initWebRTC() {
+    if(signalUnsubscribe) signalUnsubscribe();
+    
+    // Listen for signals sent TO me
+    const q = query(collection(db, 'ludo_rooms', roomId, 'signals'), where('to', '==', myPlayerId));
+    signalUnsubscribe = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                await handleSignal(data);
+                // Optionally delete signal after processing to keep DB clean, but not strictly required for simple demo
+            }
+        });
+    });
+}
+
+// 2. Handle incoming signal
+async function handleSignal(data) {
+    const { from, type, signal } = data;
+    
+    if(!localStream) {
+        // If I haven't turned on mic, I can't really "answer" with audio yet, 
+        // but I can accept the remote audio.
+        // For simplicity, we only connect if I also clicked Mic or if I auto-accept.
+        // Let's assume we establish connection but I only send audio if my mic is on.
+    }
+
+    if (!peerConnections[from]) {
+        createPeerConnection(from);
+    }
+    const pc = peerConnections[from];
+
+    try {
+        if (type === 'offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await sendSignal(from, 'answer', answer);
+        } else if (type === 'answer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal));
+        } else if (type === 'candidate') {
+            await pc.addIceCandidate(new RTCIceCandidate(signal));
+        }
+    } catch(e) { console.error("WebRTC Error:", e); }
+}
+
+// 3. Create Peer Connection
+function createPeerConnection(targetId) {
+    const pc = new RTCPeerConnection(rtcConfig);
+    peerConnections[targetId] = pc;
+
+    // Add local tracks if available
+    if(localStream) {
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    }
+
+    // Handle ICE Candidates
+    pc.onicecandidate = (event) => {
+        if (event.candidate) {
+            sendSignal(targetId, 'candidate', event.candidate);
+        }
+    };
+
+    // Handle Remote Stream (Audio)
+    pc.ontrack = (event) => {
+        const remoteAudio = document.createElement('audio');
+        remoteAudio.srcObject = event.streams[0];
+        remoteAudio.autoplay = true;
+        remoteAudio.id = `audio-${targetId}`;
+        // Respect Speaker Toggle
+        remoteAudio.muted = !isSpeakerOn;
+        document.getElementById('remote-audio-container').appendChild(remoteAudio);
+    };
+    
+    return pc;
+}
+
+// 4. Send Signal Helper
+async function sendSignal(toId, type, signal) {
+    // We add to the subcollection
+    const col = collection(db, 'ludo_rooms', roomId, 'signals');
+    await addDoc(col, {
+        to: toId,
+        from: myPlayerId,
+        type: type,
+        signal: JSON.parse(JSON.stringify(signal)), // Sanitize
+        timestamp: serverTimestamp()
+    });
+}
+
+// 5. Connect to all other players (Called when enabling mic)
+async function connectToPeers() {
+    const others = gameState.players.filter(p => p && p.id !== myPlayerId && p.status === 'active');
+    
+    for (const p of others) {
+        if (!peerConnections[p.id]) {
+            const pc = createPeerConnection(p.id);
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            await sendSignal(p.id, 'offer', offer);
+        }
+    }
+}
+
+// --- TOGGLE BUTTONS UPDATED ---
+
+window.toggleMic = async () => {
+    const btn = document.getElementById('btn-mic');
+    const icon = btn.querySelector('i');
+    
+    if(!isMicOn) {
+        // TURN ON
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            isMicOn = true;
+            icon.className = 'fas fa-microphone text-green-500';
+            showToast("Mic On - Connecting...");
+            
+            // Initiate calls to existing peers
+            await connectToPeers();
+            
+            // Add track to existing connections (if any existed before mic access)
+            Object.values(peerConnections).forEach(pc => {
+                localStream.getTracks().forEach(track => {
+                    // Check if sender already exists
+                    const senders = pc.getSenders();
+                    const hasTrack = senders.some(s => s.track === track);
+                    if(!hasTrack) pc.addTrack(track, localStream);
+                });
+            });
+
+        } catch(e) { 
+            console.error(e);
+            showToast("Mic Denied or Not HTTPS"); 
+        }
+    } else {
+        // TURN OFF
+        if(localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+        }
+        isMicOn = false;
+        icon.className = 'fas fa-microphone-slash text-slate-500';
+        showToast("Mic Off");
+        // We don't close PC, just stop sending audio.
+    }
+};
+
+window.toggleSpeaker = () => {
+    const btn = document.getElementById('btn-speaker');
+    const icon = btn.querySelector('i');
+    isSpeakerOn = !isSpeakerOn;
+    
+    if(!isSpeakerOn) {
+        icon.className = 'fas fa-volume-mute text-red-400';
+        showToast("Audio Muted");
+    } else {
+        icon.className = 'fas fa-volume-up text-slate-500';
+        showToast("Audio On");
+    }
+    
+    // Update all remote audio elements
+    document.querySelectorAll('audio').forEach(el => el.muted = !isSpeakerOn);
+};
+
+
 // --- MULTIPLAYER LOGIC ---
 function enterLobby(code) {
     showScreen('lobby-waiting');
@@ -396,14 +578,12 @@ function enterLobby(code) {
         const d = sn.data();
         if(!d) return;
         
-        // Handle Chat Sync
         if(d.chat && d.chat.length > gameState.chatCount) {
              handleChatUpdates(d.chat);
         }
 
         if(d.status === 'LOBBY') {
             const list = document.getElementById('lobby-players');
-            // Only show active players in lobby
             const activeP = d.players.filter(p => p.status !== 'left');
             list.innerHTML = activeP.map(p => `<div class="p-3 bg-white rounded-xl shadow-sm text-sm border-l-4 border-${COLORS[p.color]}-500 font-bold flex justify-between"><span>${p.name}</span> <span class="text-xs text-slate-400 self-center">${COLORS[p.color].toUpperCase()}</span></div>`).join('');
             if(d.host === myPlayerId && activeP.length > 1) document.getElementById('start-online-btn').classList.remove('hidden');
@@ -411,6 +591,9 @@ function enterLobby(code) {
             if(gameState.mode !== 'online') startOnline(d); else syncState(d);
         }
     });
+    
+    // Start Listening for Audio Signals
+    initWebRTC();
 }
 
 function startOnline(d) {
@@ -429,14 +612,13 @@ function syncState(d) {
     gameState.waitingForMove = d.waitingForMove;
     gameState.pieces = JSON.parse(d.pieces); 
     
-    // Update player statuses (check for leavers)
     d.players.forEach(p => {
         if(gameState.players[p.color]) gameState.players[p.color].status = p.status;
     });
 
     updateUI(); 
     renderPieces(); 
-    checkActivePlayers(); // Check if everyone else left
+    checkActivePlayers();
 }
 
 function handleChatUpdates(messages) {
@@ -453,7 +635,6 @@ function spawnFloatingBubble(msg) {
     bubble.className = 'chat-bubble-float';
     bubble.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
     container.appendChild(bubble);
-    // Auto scroll handling not needed for floaters, but clean up
     setTimeout(() => bubble.remove(), 7000);
 }
 
@@ -491,7 +672,6 @@ window.joinRoom = async () => {
         if(!players.some(p => p.id === myPlayerId)) {
             const takenColors = players.filter(p => p.status!=='left').map(p => p.color);
             let newColor = 0;
-            // Opposite seating logic
             if(activePlayers.length === 1) {
                 const hostColor = activePlayers[0].color;
                 newColor = (hostColor + 2) % 4;
@@ -507,7 +687,6 @@ window.joinRoom = async () => {
 window.startOnlineGame = () => updateDoc(doc(db, 'ludo_rooms', roomId), { status: 'PLAYING' });
 
 function pushGameState() {
-    // Filter out only essential player data to save
     updateDoc(doc(db, 'ludo_rooms', roomId), {
         turn: gameState.turn, diceValue: gameState.diceValue, waitingForMove: gameState.waitingForMove, pieces: JSON.stringify(gameState.pieces), lastUpdated: serverTimestamp()
     });
@@ -529,8 +708,6 @@ window.startGame = (mode) => {
 function updateUI() {
     const p = gameState.players[gameState.turn];
     const color = COLORS[gameState.turn];
-    
-    // Update Turn Indicator
     if(p && p.status === 'active') {
         document.getElementById('turn-text').innerText = `${p.name}'s Turn`;
         document.getElementById('turn-text').style.color = color === 'yellow' ? '#d97706' : '#334155';
@@ -538,23 +715,18 @@ function updateUI() {
     } else {
          document.getElementById('turn-text').innerText = `Waiting...`;
     }
-
     const diceBox = document.getElementById('dice-visual');
     if(gameState.diceValue === 0) diceBox.innerHTML = '<i class="fas fa-dice-six"></i>';
     else diceBox.innerHTML = `<i class="fas fa-dice-${['one','two','three','four','five','six'][gameState.diceValue-1]}"></i>`;
     diceBox.className = `dice-box dice-${color}`;
     
-    // Update Labels & Base status
     [0,1,2,3].forEach(i => {
         const lbl = document.getElementById(`name-${i}`);
         const base = document.getElementById(`base-${i}`);
         const player = gameState.players[i];
-        
         if(player) {
             lbl.innerText = player.name.substring(0,8); 
             lbl.style.display = 'block';
-            
-            // Handle Leavers
             if(player.status === 'left') {
                 base.classList.add('left-game');
                 lbl.innerText += " (Left)";
@@ -573,7 +745,6 @@ function renderPieces() {
     const cellCounts = {}; 
     gameState.pieces.forEach((pArr, pIdx) => {
         if(!gameState.players[pIdx] || gameState.players[pIdx].status === 'left') return; 
-        
         pArr.forEach((piece, tIdx) => {
             let r, c;
             if(piece.s === 'WIN') [r,c] = WIN_POSITIONS[COLORS[pIdx]];
@@ -669,7 +840,6 @@ async function executeMove(pIdx, tIdx) {
     gameState.isProcessing = true;
     document.querySelectorAll('.token').forEach(t => t.classList.remove('highlight-move'));
     const p = gameState.pieces[pIdx][tIdx];
-    
     if(p.s === 'BASE') { p.s = 'PATH'; p.p = 0; renderPieces(); playSound('move'); } 
     else {
         const steps = gameState.diceValue;
@@ -679,7 +849,6 @@ async function executeMove(pIdx, tIdx) {
             renderPieces(); playSound('move'); await new Promise(r => setTimeout(r, 200));
         }
     }
-    
     let bonusTurn = false;
     if(p.s === 'PATH') {
         const startIdx = START_INDICES[COLORS[pIdx]];
@@ -712,16 +881,11 @@ async function executeMove(pIdx, tIdx) {
 function nextTurn() {
     gameState.diceValue = 0; gameState.waitingForMove = false; gameState.isProcessing = false;
     let loops = 0;
-    
-    // --- SKIP LEFT PLAYERS LOGIC ---
     do { 
         gameState.turn = (gameState.turn + 1) % 4; 
         loops++; 
     } while((!gameState.players[gameState.turn] || gameState.players[gameState.turn].status === 'left' || gameState.winners.includes(gameState.turn)) && loops < 4);
-    
-    // If everyone else left/won
     checkActivePlayers();
-
     if(gameState.mode === 'online') pushGameState();
     else { 
         updateUI(); renderPieces(); playSound('turn');
@@ -732,10 +896,7 @@ function nextTurn() {
 function checkActivePlayers() {
     if(gameState.mode !== 'online') return;
     const active = gameState.players.filter(p => p && p.status === 'active');
-    
-    // If game started (has > 1 people originally) and now only 1 remains
     if(active.length === 1 && gameState.players.filter(p => p).length > 1) {
-        // Declare Winner
         const winner = active[0];
         document.getElementById('winner-name').innerText = `${winner.name} Wins!`;
         document.getElementById('winner-name').innerHTML += `<div class="text-sm text-slate-400 mt-2">Others left the game</div>`;
@@ -805,7 +966,6 @@ window.confirmGiveUp = async () => {
     document.getElementById('give-up-modal').classList.add('hidden'); 
     localStorage.removeItem('ludo_current_room');
     
-    // --- UPDATE STATUS TO 'LEFT' IN DB ---
     if(gameState.mode === 'online' && roomId && myPlayerId) {
          try {
              const ref = doc(db, 'ludo_rooms', roomId);
@@ -832,7 +992,7 @@ window.sendChat = async () => {
     const input = document.getElementById('chat-input');
     const txt = input.value.trim();
     if(!txt) return;
-    input.value = ''; // Clear immediately
+    input.value = ''; 
     
     if(gameState.mode === 'local') { 
         renderChat([{name: currentUser.name || 'You', color: 0, text: txt}]); 
@@ -842,9 +1002,8 @@ window.sendChat = async () => {
     if(!roomId) return;
     const p = gameState.players.find(pl => pl?.id === myPlayerId);
     
-    // NO LOCAL RENDER - WAIT FOR SERVER SYNC
-    // This prevents the "double message" bug
-    
+    // We do NOT optimistic render here anymore to avoid double messages. 
+    // We wait for the DB subscription to trigger the render.
     await updateDoc(doc(db, 'ludo_rooms', roomId), { chat: arrayUnion({name: p ? p.name : 'User', color: p ? p.color : -1, text: txt}) });
 };
 window.handleChatKey = (e) => { if(e.key === 'Enter') window.sendChat(); }
@@ -865,9 +1024,19 @@ window.copyRoomLink = () => {
 window.exitGame = async () => {
     localStorage.removeItem('ludo_current_room');
     if (roomUnsubscribe) roomUnsubscribe();
+    if (signalUnsubscribe) signalUnsubscribe();
     gameState.mode = null;
     showScreen('main-menu');
-    if (audioCtx.state === 'running') audioCtx.suspend();
+    
+    // Close Audio Connections
+    if(localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+    }
+    Object.values(peerConnections).forEach(pc => pc.close());
+    peerConnections = {};
+    isMicOn = false;
+    document.querySelector('#btn-mic i').className = 'fas fa-microphone-slash text-slate-500';
     document.querySelectorAll('.token').forEach(el => el.remove());
 };
 window.attemptRoll = attemptRoll;
@@ -875,8 +1044,8 @@ window.showOnlineMenu = () => showScreen('online-menu');
 window.backToMain = () => showScreen('main-menu');
 
 // --- OTHER UTILS ---
-window.toggleMic = async () => { const btn = document.getElementById('btn-mic'); const icon = btn.querySelector('i'); if(icon.classList.contains('fa-microphone-slash')) { try { await navigator.mediaDevices.getUserMedia({ audio: true }); icon.className = 'fas fa-microphone text-green-500'; showToast("Mic On"); } catch(e) { showToast("Mic Denied"); } } else { icon.className = 'fas fa-microphone-slash text-slate-500'; showToast("Mic Off"); } };
-window.toggleSpeaker = () => { const btn = document.getElementById('btn-speaker'); const icon = btn.querySelector('i'); if(icon.classList.contains('fa-volume-up')) { icon.className = 'fas fa-volume-mute text-red-400'; showToast("Muted"); } else { icon.className = 'fas fa-volume-up text-slate-500'; showToast("Unmuted"); } };
+window.toggleMic = window.toggleMic; // (Defined above)
+window.toggleSpeaker = window.toggleSpeaker; // (Defined above)
 
 </script>
 </body>
