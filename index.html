@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Ludo Master</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        /* Layout */
+        /* Layout - Using dvh for mobile browser bars */
         body {
-            height: 100vh;
+            height: 100dvh; 
             width: 100vw;
             overflow: hidden;
             display: flex;
@@ -27,7 +27,7 @@
             grid-template-columns: repeat(15, 1fr);
             grid-template-rows: repeat(15, 1fr);
             width: 95vw; height: 95vw;
-            max-width: 70vh; max-height: 70vh;
+            max-width: 65vh; max-height: 65vh; 
             background: white;
             border-radius: 12px;
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
@@ -37,61 +37,35 @@
             z-index: 10;
         }
         @media (min-width: 768px) {
-            .ludo-board { width: 80vh; height: 80vh; max-width: 600px; max-height: 600px; }
+            .ludo-board { width: 75vh; height: 75vh; max-width: 600px; max-height: 600px; }
         }
 
-        .cell {
-            border: 1px solid #e2e8f0;
-            position: relative;
-            display: flex; align-items: center; justify-content: center;
-            overflow: visible; min-width: 0; min-height: 0;
-        }
+        .cell { border: 1px solid #e2e8f0; position: relative; display: flex; align-items: center; justify-content: center; overflow: visible; min-width: 0; min-height: 0; }
 
         /* Bases */
-        .base { grid-row: span 6; grid-column: span 6; padding: 12%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; position: relative; border-radius: 4px; transition: opacity 0.3s; }
-        .base.inactive { opacity: 0.4; filter: grayscale(80%); }
+        .base { grid-row: span 6; grid-column: span 6; padding: 12%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; position: relative; border-radius: 4px; transition: all 0.3s; }
+        
+        /* LEFT/EXITED STATE */
+        .base.left-game { filter: grayscale(100%); opacity: 0.5; }
+        .base.left-game::after { content: 'LEFT'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 2rem; font-weight: 900; color: #475569; opacity: 0.8; }
+        
         .base-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; font-weight: 900; color: rgba(0,0,0,0.3); pointer-events: none; text-transform: uppercase; z-index: 0; letter-spacing: 1px; text-align: center; width: 100%; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
-        .base-red { background: linear-gradient(145deg, #fee2e2, #fecaca); border: 1px solid #f87171; }
-        .base-green { background: linear-gradient(145deg, #dcfce7, #bbf7d0); border: 1px solid #4ade80; }
-        .base-blue { background: linear-gradient(145deg, #dbeafe, #bfdbfe); border: 1px solid #60a5fa; }
-        .base-yellow { background: linear-gradient(145deg, #fef9c3, #fde68a); border: 1px solid #facc15; }
+        
+        .base-red { background: linear-gradient(145deg, #fca5a5, #ef4444); border: 1px solid #b91c1c; }
+        .base-green { background: linear-gradient(145deg, #86efac, #22c55e); border: 1px solid #15803d; }
+        .base-blue { background: linear-gradient(145deg, #93c5fd, #3b82f6); border: 1px solid #1d4ed8; }
+        .base-yellow { background: linear-gradient(145deg, #fde047, #eab308); border: 1px solid #a16207; }
+        
         .base-inner { background: white; border-radius: 50%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); z-index: 1; }
 
         /* Path Colors */
-        .path-red { background-color: #ef4444; }
-        .path-green { background-color: #22c55e; }
-        .path-blue { background-color: #3b82f6; }
-        .path-yellow { background-color: #eab308; }
-        
+        .path-red { background-color: #ef4444; } .path-green { background-color: #22c55e; } .path-blue { background-color: #3b82f6; } .path-yellow { background-color: #eab308; }
         .safe-spot::after { content: '\f005'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: rgba(0,0,0,0.2); font-size: 0.75rem; position: absolute; z-index: 0; }
         .start-point { background-image: radial-gradient(circle, rgba(0,0,0,0.15) 25%, transparent 25%); background-size: 100% 100%; }
 
-        /* CELEBRATION CENTER BOX */
-        .center-box {
-            grid-column: 7 / span 3;
-            grid-row: 7 / span 3;
-            display: grid;
-            grid-template-areas: "g g y" "r x y" "r b b";
-            z-index: 1; 
-            /* Gold Starburst Effect */
-            background: radial-gradient(circle, #fffbeb 0%, #fcd34d 100%);
-            box-shadow: inset 0 0 10px rgba(251, 191, 36, 0.5);
-            position: relative;
-        }
-        /* Trophy Icon in Center */
-        .center-box::after {
-            content: '\f091';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2rem;
-            color: rgba(255, 255, 255, 0.6);
-            z-index: 5;
-            pointer-events: none;
-        }
-
+        /* Center Box */
+        .center-box { grid-column: 7 / span 3; grid-row: 7 / span 3; display: grid; grid-template-areas: "g g y" "r x y" "r b b"; z-index: 1; background: radial-gradient(circle, #fffbeb 0%, #fcd34d 100%); box-shadow: inset 0 0 10px rgba(251, 191, 36, 0.5); position: relative; }
+        .center-box::after { content: '\f091'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; color: rgba(255, 255, 255, 0.6); z-index: 5; pointer-events: none; }
         .tri-red { grid-area: r; background: transparent; clip-path: polygon(0 0, 100% 50%, 0 100%); border-right: 1px solid rgba(0,0,0,0.1); background-color: rgba(239, 68, 68, 0.2); }
         .tri-green { grid-area: g; background: transparent; clip-path: polygon(0 0, 100% 0, 50% 100%); border-bottom: 1px solid rgba(0,0,0,0.1); background-color: rgba(34, 197, 94, 0.2); }
         .tri-yellow { grid-area: y; background: transparent; clip-path: polygon(100% 0, 100% 100%, 0 50%); border-left: 1px solid rgba(0,0,0,0.1); background-color: rgba(234, 179, 8, 0.2); }
@@ -101,30 +75,33 @@
         .token { width: 65%; height: 65%; justify-self: center; align-self: center; z-index: 50; cursor: default; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.3)); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); min-width: 0; min-height: 0; }
         .token.moveable { cursor: pointer; z-index: 60; }
         .token svg { width: 100%; height: 100%; stroke: white; stroke-width: 30px; paint-order: stroke; overflow: visible;}
-        .token.stack-1 { transform: translate(0, -15%); } .token.stack-2 { transform: translate(15%, -30%); } .token.stack-3 { transform: translate(30%, -45%); } .token.stack-4 { transform: translate(-15%, -30%); }
-        .token.win-stack-1 { transform: scale(0.8) translate(0, 0); } .token.win-stack-2 { transform: scale(0.8) translate(10px, -5px); } .token.win-stack-3 { transform: scale(0.8) translate(-10px, -5px); } .token.win-stack-4 { transform: scale(0.8) translate(0, -10px); }
         .token-red { color: #dc2626; } .token-green { color: #16a34a; } .token-blue { color: #2563eb; } .token-yellow { color: #ca8a04; }
         .highlight-move { animation: pulse-highlight 1.5s infinite; }
         @keyframes pulse-highlight { 0% { transform: scale(1) translateY(-15%); filter: brightness(1) drop-shadow(0 2px 2px rgba(0,0,0,0.5)); } 50% { transform: scale(1.25) translateY(-25%); filter: brightness(1.2) drop-shadow(0 6px 6px rgba(0,0,0,0.2)); } 100% { transform: scale(1) translateY(-15%); filter: brightness(1) drop-shadow(0 2px 2px rgba(0,0,0,0.5)); } }
 
-        /* Dice & UI */
+        /* Dice */
         .dice-box { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; transition: transform 0.1s; background: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); color: #334155; position: relative; opacity: 1 !important; }
-        .dice-box:active { transform: scale(0.95); }
         .dice-rolling { animation: chaos-roll 0.4s linear infinite; }
         @keyframes chaos-roll { 0% { transform: rotate3d(1,1,1,0deg); } 100% { transform: rotate3d(1,1,1,360deg); } }
         .dice-red { color: #ef4444; border: 2px solid #fee2e2; } .dice-green { color: #22c55e; border: 2px solid #dcfce7; } .dice-yellow { color: #eab308; border: 2px solid #fef9c3; } .dice-blue { color: #3b82f6; border: 2px solid #dbeafe; }
 
-        /* Floating Chat */
-        #floating-chat-container { position: absolute; bottom: 90px; left: 20px; width: 300px; max-width: 70%; z-index: 100; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
-        .chat-bubble-float { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.9); color: #334155; padding: 8px 14px; border-radius: 18px; border-bottom-left-radius: 4px; margin-top: 8px; font-size: 0.9rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px) scale(0.9); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.5s 5.5s forwards; pointer-events: auto; }
+        /* Floating Chat - Moved higher up */
+        #floating-chat-container { position: absolute; bottom: 120px; left: 20px; width: 300px; max-width: 70%; z-index: 100; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
+        .chat-bubble-float { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border: 1px solid white; color: #334155; padding: 10px 16px; border-radius: 18px; border-bottom-left-radius: 4px; margin-top: 8px; font-size: 0.95rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px) scale(0.9); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.5s 5.5s forwards; pointer-events: auto; }
         .chat-bubble-float strong { color: #64748b; text-transform: uppercase; font-size: 0.7rem; display: block; margin-bottom: 2px; }
         @keyframes popIn { to { opacity: 1; transform: translateY(0) scale(1); } } @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px) scale(0.95); } }
 
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .hidden { display: none !important; }
         .btn-glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.5); transition: all 0.2s; }
-        .btn-glass:hover { background: rgba(255,255,255,0.9); transform: translateY(-1px); }
         .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); }
+        
+        /* FOOTER SAFE AREA FIX */
+        .footer-safe {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            margin-bottom: 0;
+            background: rgba(255,255,255,0.95);
+        }
     </style>
 </head>
 <body class="text-slate-700">
@@ -209,14 +186,14 @@
             </div>
         </div>
 
-        <div class="flex-none bg-white/90 backdrop-blur border-t border-slate-200 p-2 flex items-center gap-3 z-30 h-16 shadow-[0_-4px_6px_rgba(0,0,0,0.02)]">
+        <div class="footer-safe flex-none border-t border-slate-200 p-2 flex items-center gap-3 z-30 shadow-[0_-4px_6px_rgba(0,0,0,0.02)]">
             <div class="flex-none w-20 flex items-center justify-center border-r border-slate-100 pr-2">
                 <div id="dice-visual" class="dice-box" onclick="window.attemptRoll()">
                     <i class="fas fa-dice-six"></i>
                 </div>
             </div>
             <div class="flex-1 flex gap-2">
-                <input type="text" id="chat-input" class="flex-1 bg-slate-100 border-0 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all font-medium" placeholder="Say something..." onkeypress="window.handleChatKey(event)">
+                <input type="text" id="chat-input" class="flex-1 bg-slate-100 border-0 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all font-medium" placeholder="Chat here..." onkeypress="window.handleChatKey(event)">
                 <button onclick="window.sendChat()" class="bg-slate-800 text-white rounded-xl px-4 py-2 text-sm font-bold hover:bg-slate-700 transition-colors shadow-md shadow-slate-200">
                     <i class="fas fa-paper-plane"></i>
                 </button>
@@ -226,9 +203,9 @@
 
     <div id="give-up-modal" class="hidden modal">
         <div class="bg-white p-6 rounded-3xl shadow-2xl text-center max-w-xs mx-4 scale-100">
-            <h3 class="text-xl font-black text-slate-800 mb-1">Give Up?</h3>
-            <p class="text-slate-500 mb-6 text-sm font-medium">This counts as a loss.</p>
-            <div class="flex gap-3"><button onclick="document.getElementById('give-up-modal').classList.add('hidden')" class="flex-1 py-3 border-2 border-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Cancel</button><button onclick="window.confirmGiveUp()" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-600">Confirm</button></div>
+            <h3 class="text-xl font-black text-slate-800 mb-1">Leave Game?</h3>
+            <p class="text-slate-500 mb-6 text-sm font-medium">You will be removed from this match.</p>
+            <div class="flex gap-3"><button onclick="document.getElementById('give-up-modal').classList.add('hidden')" class="flex-1 py-3 border-2 border-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Cancel</button><button onclick="window.confirmGiveUp()" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-600">Leave</button></div>
         </div>
     </div>
     <div id="victory-modal" class="hidden modal">
@@ -238,15 +215,7 @@
             <button onclick="window.exitGame()" class="w-full py-4 bg-slate-800 text-white rounded-xl font-bold shadow-xl hover:bg-slate-900 transition-transform hover:scale-105">Back to Menu</button>
         </div>
     </div>
-    <div id="error-modal" class="hidden modal">
-        <div class="bg-white p-6 rounded-3xl shadow-2xl text-center max-w-sm mx-4 scale-100 border-l-4 border-red-500">
-            <div class="text-4xl mb-2">⚠️</div>
-            <h3 class="text-xl font-black text-slate-800 mb-2">Permission Denied</h3>
-            <p class="text-slate-600 mb-4 text-sm font-medium leading-relaxed">Your Firebase Security Rules are blocking access.</p>
-            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg hover:bg-slate-900">OK</button>
-        </div>
-    </div>
-
+    
     <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-5 py-2.5 rounded-full text-xs font-bold opacity-0 transition-all pointer-events-none z-[60] shadow-xl whitespace-nowrap translate-y-4"></div>
 
 <script type="module">
@@ -309,7 +278,7 @@ const playSound = (type) => {
 };
 
 function showScreen(screenId) {
-    ['auth-screen', 'main-menu', 'online-menu', 'lobby-waiting', 'game-ui', 'give-up-modal', 'victory-modal', 'error-modal'].forEach(id => {
+    ['auth-screen', 'main-menu', 'online-menu', 'lobby-waiting', 'game-ui', 'give-up-modal', 'victory-modal'].forEach(id => {
         document.getElementById(id).classList.add('hidden');
     });
     document.getElementById(screenId).classList.remove('hidden');
@@ -319,19 +288,15 @@ function showScreen(screenId) {
 
 window.toggleSFX = () => { sfxEnabled = !sfxEnabled; document.querySelector('#btn-sfx i').className = sfxEnabled ? 'fas fa-music' : 'fas fa-slash text-red-400'; showToast(`SFX ${sfxEnabled?'On':'Off'}`); };
 
-// --- SESSION MANAGEMENT ---
 async function initAuth() {
     try {
-        // 1. Auto-Login from LocalStorage
         const saved = localStorage.getItem('ludo_user');
         if(saved) {
             currentUser = JSON.parse(saved);
-            loginSuccess(currentUser.name, currentUser.password, true); // True = Skip toast
+            loginSuccess(currentUser.name, currentUser.password, true);
         }
-        
         await signInAnonymously(auth);
 
-        // 2. Check for External Link Join
         const params = new URLSearchParams(window.location.search);
         const linkRoom = params.get('room');
         if(linkRoom) {
@@ -340,12 +305,8 @@ async function initAuth() {
             return; 
         }
 
-        // 3. Reconnect to Active Session (Refresh Handling)
         const activeRoom = localStorage.getItem('ludo_current_room');
-        if(activeRoom && saved) {
-            rejoinSession(activeRoom);
-        }
-
+        if(activeRoom && saved) rejoinSession(activeRoom);
     } catch(e) { console.error("Auth Init:", e); }
 }
 
@@ -357,15 +318,12 @@ async function rejoinSession(code) {
     const d = await getDoc(ref);
     if(d.exists()) {
         const players = d.data().players;
-        // Verify we are actually in this room
-        if(players.some(p => p.id === myPlayerId)) {
+        if(players.some(p => p.id === myPlayerId && p.status !== 'left')) {
             showToast("Rejoining Game...");
-            enterLobby(code); // Logic handles both LOBBY and PLAYING states
+            enterLobby(code);
         } else {
-            localStorage.removeItem('ludo_current_room'); // We were kicked or game ended
+            localStorage.removeItem('ludo_current_room');
         }
-    } else {
-        localStorage.removeItem('ludo_current_room'); // Room expired
     }
 }
 
@@ -389,10 +347,7 @@ window.attemptLogin = async () => {
             await setDoc(ref, { password: p, created: serverTimestamp() });
             loginSuccess(u, p);
         }
-    } catch(e) { 
-        if(e.code === 'permission-denied') document.getElementById('error-modal').classList.remove('hidden');
-        else showToast("Login Error: " + e.code); 
-    }
+    } catch(e) { showToast("Login Error: " + e.code); }
 };
 
 window.skipLogin = async () => {
@@ -435,15 +390,23 @@ createBoard();
 function enterLobby(code) {
     showScreen('lobby-waiting');
     document.getElementById('display-room-code').innerText = code;
-    localStorage.setItem('ludo_current_room', code); // Session Persistence
+    localStorage.setItem('ludo_current_room', code);
 
     roomUnsubscribe = onSnapshot(doc(db, 'ludo_rooms', code), sn => {
         const d = sn.data();
         if(!d) return;
+        
+        // Handle Chat Sync
+        if(d.chat && d.chat.length > gameState.chatCount) {
+             handleChatUpdates(d.chat);
+        }
+
         if(d.status === 'LOBBY') {
             const list = document.getElementById('lobby-players');
-            list.innerHTML = d.players.map(p => `<div class="p-3 bg-white rounded-xl shadow-sm text-sm border-l-4 border-${COLORS[p.color]}-500 font-bold flex justify-between"><span>${p.name}</span> <span class="text-xs text-slate-400 self-center">${COLORS[p.color].toUpperCase()}</span></div>`).join('');
-            if(d.host === myPlayerId && d.players.length > 1) document.getElementById('start-online-btn').classList.remove('hidden');
+            // Only show active players in lobby
+            const activeP = d.players.filter(p => p.status !== 'left');
+            list.innerHTML = activeP.map(p => `<div class="p-3 bg-white rounded-xl shadow-sm text-sm border-l-4 border-${COLORS[p.color]}-500 font-bold flex justify-between"><span>${p.name}</span> <span class="text-xs text-slate-400 self-center">${COLORS[p.color].toUpperCase()}</span></div>`).join('');
+            if(d.host === myPlayerId && activeP.length > 1) document.getElementById('start-online-btn').classList.remove('hidden');
         } else if(d.status === 'PLAYING') {
             if(gameState.mode !== 'online') startOnline(d); else syncState(d);
         }
@@ -452,20 +415,28 @@ function enterLobby(code) {
 
 function startOnline(d) {
     gameState.mode = 'online'; 
-    // MAPPING LOGIC: Map players to their specific Color Index Slots
     gameState.players = [null, null, null, null];
     d.players.forEach(p => {
         if(p.color >= 0 && p.color < 4) gameState.players[p.color] = p;
     });
-    
     showScreen('game-ui');
     syncState(d);
 }
 
 function syncState(d) {
-    gameState.turn = d.turn; gameState.diceValue = d.diceValue; gameState.waitingForMove = d.waitingForMove;
-    gameState.pieces = JSON.parse(d.pieces); updateUI(); renderPieces(); 
-    if(d.chat) handleChatUpdates(d.chat);
+    gameState.turn = d.turn; 
+    gameState.diceValue = d.diceValue; 
+    gameState.waitingForMove = d.waitingForMove;
+    gameState.pieces = JSON.parse(d.pieces); 
+    
+    // Update player statuses (check for leavers)
+    d.players.forEach(p => {
+        if(gameState.players[p.color]) gameState.players[p.color].status = p.status;
+    });
+
+    updateUI(); 
+    renderPieces(); 
+    checkActivePlayers(); // Check if everyone else left
 }
 
 function handleChatUpdates(messages) {
@@ -482,6 +453,7 @@ function spawnFloatingBubble(msg) {
     bubble.className = 'chat-bubble-float';
     bubble.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
     container.appendChild(bubble);
+    // Auto scroll handling not needed for floaters, but clean up
     setTimeout(() => bubble.remove(), 7000);
 }
 
@@ -494,14 +466,11 @@ window.createRoom = async () => {
         const initialPieces = JSON.stringify(Array(4).fill(0).map(() => Array(4).fill(0).map(() => ({s:'BASE', p:0}))));
         await setDoc(doc(db, 'ludo_rooms', code), {
             status: 'LOBBY', host: myPlayerId, chat: [], 
-            players: [{id:myPlayerId, name: name, color:0, type:'remote'}], // Host is Red (0)
+            players: [{id:myPlayerId, name: name, color:0, type:'remote', status:'active'}], 
             pieces: initialPieces, turn: 0, diceValue: 0, waitingForMove: false, lastUpdated: serverTimestamp()
         });
         enterLobby(code);
-    } catch(e) { 
-        if(e.code === 'permission-denied') document.getElementById('error-modal').classList.remove('hidden');
-        else showToast("Error: " + e.message);
-    }
+    } catch(e) { showToast("Error: " + e.message); }
 };
 
 window.joinRoom = async () => {
@@ -513,20 +482,23 @@ window.joinRoom = async () => {
         const d = await getDoc(ref);
         if(!d.exists()) return showToast("Room not found");
         const players = d.data().players;
-        if(players.length >= 4) return showToast("Room Full");
+        const activePlayers = players.filter(p => p.status !== 'left');
+        
+        if(activePlayers.length >= 4) return showToast("Room Full");
         
         myPlayerId = auth.currentUser.uid; roomId = code;
         
         if(!players.some(p => p.id === myPlayerId)) {
-            // --- OPPOSITE SEATING LOGIC ---
-            const takenColors = players.map(p => p.color);
+            const takenColors = players.filter(p => p.status!=='left').map(p => p.color);
             let newColor = 0;
-            if(!takenColors.includes(2)) newColor = 2;      // 2nd Player -> YELLOW (Opposite Red)
-            else if(!takenColors.includes(1)) newColor = 1; // 3rd Player -> GREEN
-            else if(!takenColors.includes(3)) newColor = 3; // 4th Player -> BLUE
-            else return showToast("Room Full"); 
-
-            await updateDoc(ref, { players: [...players, {id:myPlayerId, name: name, color:newColor, type:'remote'}] });
+            // Opposite seating logic
+            if(activePlayers.length === 1) {
+                const hostColor = activePlayers[0].color;
+                newColor = (hostColor + 2) % 4;
+            } else {
+                while(takenColors.includes(newColor)) newColor++;
+            }
+            await updateDoc(ref, { players: [...players, {id:myPlayerId, name: name, color:newColor, type:'remote', status:'active'}] });
         }
         enterLobby(code);
     } catch(e) { showToast("Join Failed"); console.error(e); }
@@ -535,6 +507,7 @@ window.joinRoom = async () => {
 window.startOnlineGame = () => updateDoc(doc(db, 'ludo_rooms', roomId), { status: 'PLAYING' });
 
 function pushGameState() {
+    // Filter out only essential player data to save
     updateDoc(doc(db, 'ludo_rooms', roomId), {
         turn: gameState.turn, diceValue: gameState.diceValue, waitingForMove: gameState.waitingForMove, pieces: JSON.stringify(gameState.pieces), lastUpdated: serverTimestamp()
     });
@@ -545,7 +518,7 @@ window.startGame = (mode) => {
         mode, turn: 0, diceValue: 0, waitingForMove: false, isProcessing: false, winners: [], chatCount: 0,
         pieces: Array(4).fill(0).map(() => Array(4).fill(0).map(() => ({s:'BASE', p:0}))),
         players: mode === 'local' 
-            ? [{id:'p1',name:currentUser.name||'You',color:0,type:'human'}, null, {id:'bot',name:'CPU',color:2,type:'bot'}, null] // Local: Red vs Yellow
+            ? [{id:'p1',name:currentUser.name||'You',color:0,type:'human', status:'active'}, null, {id:'bot',name:'CPU',color:2,type:'bot', status:'active'}, null] 
             : []
     };
     showScreen('game-ui');
@@ -556,31 +529,42 @@ window.startGame = (mode) => {
 function updateUI() {
     const p = gameState.players[gameState.turn];
     const color = COLORS[gameState.turn];
-    if(p) {
+    
+    // Update Turn Indicator
+    if(p && p.status === 'active') {
         document.getElementById('turn-text').innerText = `${p.name}'s Turn`;
         document.getElementById('turn-text').style.color = color === 'yellow' ? '#d97706' : '#334155';
         document.getElementById('current-turn-indicator').className = `w-3 h-3 rounded-full bg-${color === 'yellow' ? 'yellow-500' : color + '-500'}`;
+    } else {
+         document.getElementById('turn-text').innerText = `Waiting...`;
     }
+
     const diceBox = document.getElementById('dice-visual');
     if(gameState.diceValue === 0) diceBox.innerHTML = '<i class="fas fa-dice-six"></i>';
     else diceBox.innerHTML = `<i class="fas fa-dice-${['one','two','three','four','five','six'][gameState.diceValue-1]}"></i>`;
     diceBox.className = `dice-box dice-${color}`;
     
-    // Reset all bases first
+    // Update Labels & Base status
     [0,1,2,3].forEach(i => {
         const lbl = document.getElementById(`name-${i}`);
         const base = document.getElementById(`base-${i}`);
-        base.classList.add('inactive'); lbl.style.display = 'none';
-    });
-
-    // Activate current players
-    gameState.players.forEach((pl, idx) => {
-        if(pl) {
-            const lbl = document.getElementById(`name-${idx}`);
-            const base = document.getElementById(`base-${idx}`);
-            lbl.innerText = pl.name.substring(0,8); 
-            base.classList.remove('inactive'); 
+        const player = gameState.players[i];
+        
+        if(player) {
+            lbl.innerText = player.name.substring(0,8); 
             lbl.style.display = 'block';
+            
+            // Handle Leavers
+            if(player.status === 'left') {
+                base.classList.add('left-game');
+                lbl.innerText += " (Left)";
+                lbl.style.opacity = 0.5;
+            } else {
+                base.classList.remove('left-game');
+                lbl.style.opacity = 1;
+            }
+        } else {
+            lbl.style.display = 'none';
         }
     });
 }
@@ -588,7 +572,8 @@ function updateUI() {
 function renderPieces() {
     const cellCounts = {}; 
     gameState.pieces.forEach((pArr, pIdx) => {
-        if(!gameState.players[pIdx]) return;
+        if(!gameState.players[pIdx] || gameState.players[pIdx].status === 'left') return; 
+        
         pArr.forEach((piece, tIdx) => {
             let r, c;
             if(piece.s === 'WIN') [r,c] = WIN_POSITIONS[COLORS[pIdx]];
@@ -702,7 +687,7 @@ async function executeMove(pIdx, tIdx) {
         const allSafe = [1, 14, 27, 40, ...SAFE_SPOTS];
         if(!allSafe.includes(myGlob)) {
             gameState.pieces.forEach((opps, oIdx) => {
-                if(oIdx !== pIdx && gameState.players[oIdx]) opps.forEach(op => {
+                if(oIdx !== pIdx && gameState.players[oIdx] && gameState.players[oIdx].status === 'active') opps.forEach(op => {
                     const opStart = START_INDICES[COLORS[oIdx]];
                     if(op.s === 'PATH' && (opStart + op.p)%52 === myGlob) { 
                         op.s = 'BASE'; op.p = 0; showToast("Captured!"); playSound('win'); bonusTurn = true;
@@ -727,15 +712,34 @@ async function executeMove(pIdx, tIdx) {
 function nextTurn() {
     gameState.diceValue = 0; gameState.waitingForMove = false; gameState.isProcessing = false;
     let loops = 0;
+    
+    // --- SKIP LEFT PLAYERS LOGIC ---
     do { 
         gameState.turn = (gameState.turn + 1) % 4; 
         loops++; 
-    } while((!gameState.players[gameState.turn] || gameState.winners.includes(gameState.turn)) && loops < 4);
+    } while((!gameState.players[gameState.turn] || gameState.players[gameState.turn].status === 'left' || gameState.winners.includes(gameState.turn)) && loops < 4);
     
+    // If everyone else left/won
+    checkActivePlayers();
+
     if(gameState.mode === 'online') pushGameState();
     else { 
         updateUI(); renderPieces(); playSound('turn');
         if(gameState.mode === 'local' && gameState.players[gameState.turn].type === 'bot') setTimeout(() => performRoll(false), 1000); 
+    }
+}
+
+function checkActivePlayers() {
+    if(gameState.mode !== 'online') return;
+    const active = gameState.players.filter(p => p && p.status === 'active');
+    
+    // If game started (has > 1 people originally) and now only 1 remains
+    if(active.length === 1 && gameState.players.filter(p => p).length > 1) {
+        // Declare Winner
+        const winner = active[0];
+        document.getElementById('winner-name').innerText = `${winner.name} Wins!`;
+        document.getElementById('winner-name').innerHTML += `<div class="text-sm text-slate-400 mt-2">Others left the game</div>`;
+        document.getElementById('victory-modal').classList.remove('hidden');
     }
 }
 
@@ -766,7 +770,7 @@ function evaluateMoveScore(pIdx, tIdx, roll) {
     if(!allSafe.includes(targetGlob)) {
         let capture = false;
         gameState.pieces.forEach((opps, oIdx) => {
-            if(oIdx !== pIdx && gameState.players[oIdx]) opps.forEach(op => {
+            if(oIdx !== pIdx && gameState.players[oIdx] && gameState.players[oIdx].status === 'active') opps.forEach(op => {
                 const opStart = START_INDICES[COLORS[oIdx]];
                 if(op.s === 'PATH' && (opStart + op.p)%52 === targetGlob) capture = true;
             });
@@ -796,30 +800,52 @@ function showToast(msg) {
 }
 
 window.showGiveUp = () => document.getElementById('give-up-modal').classList.remove('hidden');
+
 window.confirmGiveUp = async () => { 
     document.getElementById('give-up-modal').classList.add('hidden'); 
     localStorage.removeItem('ludo_current_room');
+    
+    // --- UPDATE STATUS TO 'LEFT' IN DB ---
     if(gameState.mode === 'online' && roomId && myPlayerId) {
          try {
-             const p = gameState.players.find(pl => pl?.id === myPlayerId);
-             const name = p ? p.name : 'Unknown';
-             await updateDoc(doc(db, 'ludo_rooms', roomId), {
-                chat: arrayUnion({name: 'System', color: -1, text: `${name} forfeited.`})
-             });
+             const ref = doc(db, 'ludo_rooms', roomId);
+             const d = await getDoc(ref);
+             if(d.exists()) {
+                 const plList = d.data().players;
+                 const myIdx = plList.findIndex(p => p.id === myPlayerId);
+                 if(myIdx !== -1) {
+                     plList[myIdx].status = 'left';
+                     await updateDoc(ref, {
+                        players: plList,
+                        chat: arrayUnion({name: 'System', color: -1, text: `${plList[myIdx].name} left the game.`})
+                     });
+                 }
+             }
          } catch(e) { console.log(e); }
     }
-    showToast("You gave up!"); 
-    setTimeout(() => window.exitGame(), 1000); 
+    
+    showToast("You left the game"); 
+    setTimeout(() => window.exitGame(), 500); 
 };
+
 window.sendChat = async () => {
     const input = document.getElementById('chat-input');
     const txt = input.value.trim();
     if(!txt) return;
-    if(gameState.mode === 'local') { renderChat([{name: currentUser.name || 'You', color: 0, text: txt}]); input.value = ''; return; }
+    input.value = ''; // Clear immediately
+    
+    if(gameState.mode === 'local') { 
+        renderChat([{name: currentUser.name || 'You', color: 0, text: txt}]); 
+        return; 
+    }
+    
     if(!roomId) return;
     const p = gameState.players.find(pl => pl?.id === myPlayerId);
+    
+    // NO LOCAL RENDER - WAIT FOR SERVER SYNC
+    // This prevents the "double message" bug
+    
     await updateDoc(doc(db, 'ludo_rooms', roomId), { chat: arrayUnion({name: p ? p.name : 'User', color: p ? p.color : -1, text: txt}) });
-    input.value = '';
 };
 window.handleChatKey = (e) => { if(e.key === 'Enter') window.sendChat(); }
 
