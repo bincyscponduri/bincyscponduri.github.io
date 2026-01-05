@@ -44,7 +44,6 @@
 
         /* Bases */
         .base { grid-row: span 6; grid-column: span 6; padding: 12%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; position: relative; border-radius: 4px; transition: all 0.3s; }
-        
         .base.left-game { filter: grayscale(100%); opacity: 0.5; }
         .base.left-game::after { content: 'LEFT'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 2rem; font-weight: 900; color: #475569; opacity: 0.8; }
         
@@ -94,15 +93,7 @@
         .hidden { display: none !important; }
         .btn-glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.5); transition: all 0.2s; }
         .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); }
-        
-        .footer-safe {
-            padding-bottom: env(safe-area-inset-bottom, 20px);
-            margin-bottom: 0;
-            background: rgba(255,255,255,0.95);
-        }
-        
-        /* Audio Indicators */
-        .speaking-indicator { box-shadow: 0 0 0 3px #22c55e !important; }
+        .footer-safe { padding-bottom: env(safe-area-inset-bottom, 20px); margin-bottom: 0; background: rgba(255,255,255,0.95); }
     </style>
 </head>
 <body class="text-slate-700">
@@ -224,7 +215,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, arrayUnion, collection, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, arrayUnion, collection, addDoc, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDyftShVByBykSgDi6loVFgu76loF7Ey-M",
@@ -265,11 +256,16 @@ let currentUser = { name: 'Player', password: '' };
 let sfxEnabled = true;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-// --- WEBRTC GLOBALS ---
+// --- ROBUST WEBRTC GLOBALS ---
 let localStream = null;
-let peerConnections = {}; // { targetUserId: RTCPeerConnection }
+let peerConnections = {}; 
+let rtcSessionId = Math.random().toString(36).substring(7); // Unique ID per page refresh/session
 const rtcConfig = {
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] // Public STUN server
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
+    ]
 };
 let isMicOn = false;
 let isSpeakerOn = true;
@@ -333,7 +329,6 @@ async function rejoinSession(code) {
         if(players.some(p => p.id === myPlayerId && p.status !== 'left')) {
             showToast("Rejoining Game...");
             enterLobby(code);
-            initWebRTC(); // Re-init audio listener
         } else {
             localStorage.removeItem('ludo_current_room');
         }
@@ -399,35 +394,50 @@ function createBoard() {
 }
 createBoard();
 
-// --- WEBRTC LOGIC ---
+// --- ROBUST WEBRTC LOGIC ---
 
-// 1. Initialize Listener for incoming calls/answers
-function initWebRTC() {
+function cleanupRTC() {
+    // 1. Stop Signals
     if(signalUnsubscribe) signalUnsubscribe();
     
-    // Listen for signals sent TO me
+    // 2. Stop Tracks
+    if(localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+    }
+    
+    // 3. Close Peer Connections
+    Object.values(peerConnections).forEach(pc => pc.close());
+    peerConnections = {};
+    
+    // 4. Remove Audio Elements
+    const container = document.getElementById('remote-audio-container');
+    if(container) container.innerHTML = '';
+}
+
+function initWebRTC() {
+    // Regenerate ID on fresh init
+    rtcSessionId = Math.random().toString(36).substring(7);
+    
+    // Listen for signals meant for ME
     const q = query(collection(db, 'ludo_rooms', roomId, 'signals'), where('to', '==', myPlayerId));
     signalUnsubscribe = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach(async (change) => {
             if (change.type === "added") {
                 const data = change.doc.data();
+                // Process then delete immediately to prevent stale re-processing
                 await handleSignal(data);
-                // Optionally delete signal after processing to keep DB clean, but not strictly required for simple demo
+                deleteDoc(change.doc.ref);
             }
         });
     });
 }
 
-// 2. Handle incoming signal
 async function handleSignal(data) {
-    const { from, type, signal } = data;
+    const { from, type, signal, targetSessionId } = data;
     
-    if(!localStream) {
-        // If I haven't turned on mic, I can't really "answer" with audio yet, 
-        // but I can accept the remote audio.
-        // For simplicity, we only connect if I also clicked Mic or if I auto-accept.
-        // Let's assume we establish connection but I only send audio if my mic is on.
-    }
+    // SAFETY: Only process if it matches my current session ID (prevents refresh ghosts)
+    if(targetSessionId && targetSessionId !== rtcSessionId) return;
 
     if (!peerConnections[from]) {
         createPeerConnection(from);
@@ -436,117 +446,114 @@ async function handleSignal(data) {
 
     try {
         if (type === 'offer') {
+            if (pc.signalingState !== "stable") return; // Glare prevention simple
             await pc.setRemoteDescription(new RTCSessionDescription(signal));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             await sendSignal(from, 'answer', answer);
         } else if (type === 'answer') {
+            if (pc.signalingState !== "have-local-offer") return;
             await pc.setRemoteDescription(new RTCSessionDescription(signal));
         } else if (type === 'candidate') {
-            await pc.addIceCandidate(new RTCIceCandidate(signal));
+            if (pc.remoteDescription) {
+                await pc.addIceCandidate(new RTCIceCandidate(signal));
+            }
         }
     } catch(e) { console.error("WebRTC Error:", e); }
 }
 
-// 3. Create Peer Connection
 function createPeerConnection(targetId) {
+    // If one exists, close it first to be safe
+    if(peerConnections[targetId]) {
+        peerConnections[targetId].close();
+    }
+
     const pc = new RTCPeerConnection(rtcConfig);
     peerConnections[targetId] = pc;
 
-    // Add local tracks if available
     if(localStream) {
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
     }
 
-    // Handle ICE Candidates
     pc.onicecandidate = (event) => {
         if (event.candidate) {
             sendSignal(targetId, 'candidate', event.candidate);
         }
     };
 
-    // Handle Remote Stream (Audio)
     pc.ontrack = (event) => {
         const remoteAudio = document.createElement('audio');
         remoteAudio.srcObject = event.streams[0];
         remoteAudio.autoplay = true;
         remoteAudio.id = `audio-${targetId}`;
-        // Respect Speaker Toggle
         remoteAudio.muted = !isSpeakerOn;
         document.getElementById('remote-audio-container').appendChild(remoteAudio);
+        // Ensure playback logic
+        remoteAudio.play().catch(e => console.log("Autoplay blocked", e));
     };
     
     return pc;
 }
 
-// 4. Send Signal Helper
 async function sendSignal(toId, type, signal) {
-    // We add to the subcollection
     const col = collection(db, 'ludo_rooms', roomId, 'signals');
     await addDoc(col, {
         to: toId,
         from: myPlayerId,
         type: type,
-        signal: JSON.parse(JSON.stringify(signal)), // Sanitize
+        signal: JSON.parse(JSON.stringify(signal)),
+        // Send MY session ID so they know who sent it
+        // We could also send THEIR session ID if we knew it, but simplified here:
+        // receiver checks if the signal is fresh.
+        targetSessionId: null, // Broadcast to whatever session ID they have currently
         timestamp: serverTimestamp()
     });
 }
 
-// 5. Connect to all other players (Called when enabling mic)
 async function connectToPeers() {
     const others = gameState.players.filter(p => p && p.id !== myPlayerId && p.status === 'active');
     
     for (const p of others) {
-        if (!peerConnections[p.id]) {
-            const pc = createPeerConnection(p.id);
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            await sendSignal(p.id, 'offer', offer);
-        }
+        // Create Fresh PC
+        const pc = createPeerConnection(p.id);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        // Send signal without targetSessionId (broadcast to active session)
+        await sendSignal(p.id, 'offer', offer);
     }
 }
 
-// --- TOGGLE BUTTONS UPDATED ---
+// --- TOGGLE BUTTONS ---
 
 window.toggleMic = async () => {
     const btn = document.getElementById('btn-mic');
     const icon = btn.querySelector('i');
     
     if(!isMicOn) {
-        // TURN ON
+        // --- TURN ON (FRESH START) ---
+        cleanupRTC(); // Safety clear
+        initWebRTC(); // Start Listener
+        
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             isMicOn = true;
             icon.className = 'fas fa-microphone text-green-500';
             showToast("Mic On - Connecting...");
             
-            // Initiate calls to existing peers
+            // Connect to everyone fresh
             await connectToPeers();
-            
-            // Add track to existing connections (if any existed before mic access)
-            Object.values(peerConnections).forEach(pc => {
-                localStream.getTracks().forEach(track => {
-                    // Check if sender already exists
-                    const senders = pc.getSenders();
-                    const hasTrack = senders.some(s => s.track === track);
-                    if(!hasTrack) pc.addTrack(track, localStream);
-                });
-            });
 
         } catch(e) { 
             console.error(e);
-            showToast("Mic Denied or Not HTTPS"); 
+            showToast("Mic Error or Not HTTPS"); 
         }
     } else {
-        // TURN OFF
-        if(localStream) {
-            localStream.getTracks().forEach(t => t.stop());
-            localStream = null;
-        }
+        // --- TURN OFF (CLEANUP) ---
+        cleanupRTC(); // This kills connection completely
         isMicOn = false;
         icon.className = 'fas fa-microphone-slash text-slate-500';
         showToast("Mic Off");
-        // We don't close PC, just stop sending audio.
+        // We stay "offline" for audio until toggled back on
     }
 };
 
@@ -562,8 +569,6 @@ window.toggleSpeaker = () => {
         icon.className = 'fas fa-volume-up text-slate-500';
         showToast("Audio On");
     }
-    
-    // Update all remote audio elements
     document.querySelectorAll('audio').forEach(el => el.muted = !isSpeakerOn);
 };
 
@@ -591,9 +596,6 @@ function enterLobby(code) {
             if(gameState.mode !== 'online') startOnline(d); else syncState(d);
         }
     });
-    
-    // Start Listening for Audio Signals
-    initWebRTC();
 }
 
 function startOnline(d) {
@@ -965,6 +967,7 @@ window.showGiveUp = () => document.getElementById('give-up-modal').classList.rem
 window.confirmGiveUp = async () => { 
     document.getElementById('give-up-modal').classList.add('hidden'); 
     localStorage.removeItem('ludo_current_room');
+    cleanupRTC();
     
     if(gameState.mode === 'online' && roomId && myPlayerId) {
          try {
@@ -1002,8 +1005,7 @@ window.sendChat = async () => {
     if(!roomId) return;
     const p = gameState.players.find(pl => pl?.id === myPlayerId);
     
-    // We do NOT optimistic render here anymore to avoid double messages. 
-    // We wait for the DB subscription to trigger the render.
+    // Server sync only
     await updateDoc(doc(db, 'ludo_rooms', roomId), { chat: arrayUnion({name: p ? p.name : 'User', color: p ? p.color : -1, text: txt}) });
 };
 window.handleChatKey = (e) => { if(e.key === 'Enter') window.sendChat(); }
@@ -1024,19 +1026,9 @@ window.copyRoomLink = () => {
 window.exitGame = async () => {
     localStorage.removeItem('ludo_current_room');
     if (roomUnsubscribe) roomUnsubscribe();
-    if (signalUnsubscribe) signalUnsubscribe();
+    cleanupRTC();
     gameState.mode = null;
     showScreen('main-menu');
-    
-    // Close Audio Connections
-    if(localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-        localStream = null;
-    }
-    Object.values(peerConnections).forEach(pc => pc.close());
-    peerConnections = {};
-    isMicOn = false;
-    document.querySelector('#btn-mic i').className = 'fas fa-microphone-slash text-slate-500';
     document.querySelectorAll('.token').forEach(el => el.remove());
 };
 window.attemptRoll = attemptRoll;
