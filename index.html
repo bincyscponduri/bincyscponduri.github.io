@@ -26,65 +26,36 @@
             display: grid;
             grid-template-columns: repeat(15, 1fr);
             grid-template-rows: repeat(15, 1fr);
-            height: 100%;
-            max-height: 100%; 
-            aspect-ratio: 1/1;
-            width: auto;
-            max-width: 100%;
-            
+            width: 95vw; height: 95vw;
+            max-width: 70vh; max-height: 70vh;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
             position: relative;
             overflow: hidden;
             border: 4px solid white;
             z-index: 10;
         }
+        @media (min-width: 768px) {
+            .ludo-board { width: 80vh; height: 80vh; max-width: 600px; max-height: 600px; }
+        }
 
         .cell {
             border: 1px solid #e2e8f0;
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: visible;
-            min-width: 0;
-            min-height: 0;
+            display: flex; align-items: center; justify-content: center;
+            overflow: visible; min-width: 0; min-height: 0;
         }
 
         /* Bases */
         .base { grid-row: span 6; grid-column: span 6; padding: 12%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; position: relative; border-radius: 4px; transition: opacity 0.3s; }
         .base.inactive { opacity: 0.4; filter: grayscale(80%); }
-        
-        .base-label { 
-            position: absolute; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            font-size: 0.8rem; 
-            font-weight: 900; 
-            color: rgba(0,0,0,0.3);
-            pointer-events: none; 
-            text-transform: uppercase; 
-            z-index: 0;
-            letter-spacing: 1px;
-            text-align: center;
-            width: 100%;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.5);
-        }
-        
+        .base-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; font-weight: 900; color: rgba(0,0,0,0.3); pointer-events: none; text-transform: uppercase; z-index: 0; letter-spacing: 1px; text-align: center; width: 100%; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
         .base-red { background: linear-gradient(145deg, #fee2e2, #fecaca); border: 1px solid #f87171; }
         .base-green { background: linear-gradient(145deg, #dcfce7, #bbf7d0); border: 1px solid #4ade80; }
         .base-blue { background: linear-gradient(145deg, #dbeafe, #bfdbfe); border: 1px solid #60a5fa; }
         .base-yellow { background: linear-gradient(145deg, #fef9c3, #fde68a); border: 1px solid #facc15; }
-        
-        .base-inner { 
-            background: white; 
-            border-radius: 50%; 
-            width: 100%; height: 100%; 
-            display: flex; align-items: center; justify-content: center; 
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-            z-index: 1; 
-        }
+        .base-inner { background: white; border-radius: 50%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); z-index: 1; }
 
         /* Path Colors */
         .path-red { background-color: #ef4444; }
@@ -92,147 +63,65 @@
         .path-blue { background-color: #3b82f6; }
         .path-yellow { background-color: #eab308; }
         
-        /* Safe Spots */
-        .safe-spot::after {
-            content: '\f005'; 
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            color: rgba(0,0,0,0.2);
-            font-size: 0.75rem;
-            position: absolute;
-            z-index: 0;
-        }
-        
-        /* Start Points */
-        .start-point {
-            background-image: radial-gradient(circle, rgba(0,0,0,0.15) 25%, transparent 25%);
-            background-size: 100% 100%;
-        }
+        .safe-spot::after { content: '\f005'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: rgba(0,0,0,0.2); font-size: 0.75rem; position: absolute; z-index: 0; }
+        .start-point { background-image: radial-gradient(circle, rgba(0,0,0,0.15) 25%, transparent 25%); background-size: 100% 100%; }
 
-        /* Center - White */
+        /* CELEBRATION CENTER BOX */
         .center-box {
             grid-column: 7 / span 3;
             grid-row: 7 / span 3;
             display: grid;
             grid-template-areas: "g g y" "r x y" "r b b";
             z-index: 1; 
-            background: white;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
-        }
-        .tri-red { grid-area: r; background: white; clip-path: polygon(0 0, 100% 50%, 0 100%); border-right: 1px solid #e2e8f0; }
-        .tri-green { grid-area: g; background: white; clip-path: polygon(0 0, 100% 0, 50% 100%); border-bottom: 1px solid #e2e8f0; }
-        .tri-yellow { grid-area: y; background: white; clip-path: polygon(100% 0, 100% 100%, 0 50%); border-left: 1px solid #e2e8f0; }
-        .tri-blue { grid-area: b; background: white; clip-path: polygon(50% 0, 0 100%, 100% 100%); border-top: 1px solid #e2e8f0; }
-
-        /* Tokens */
-        .token {
-            width: 65%;
-            height: 65%;
-            justify-self: center;
-            align-self: center;
-            z-index: 50;
-            cursor: default;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            filter: drop-shadow(0 3px 2px rgba(0,0,0,0.3));
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            min-width: 0;
-            min-height: 0;
-        }
-        .token.moveable { cursor: pointer; z-index: 60; }
-        .token svg { width: 100%; height: 100%; stroke: white; stroke-width: 30px; paint-order: stroke; overflow: visible;}
-        
-        .token.stack-1 { transform: translate(0, -15%); }
-        .token.stack-2 { transform: translate(15%, -30%); }
-        .token.stack-3 { transform: translate(30%, -45%); }
-        .token.stack-4 { transform: translate(-15%, -30%); }
-
-        /* Winning Stack */
-        .token.win-stack-1 { transform: scale(0.8) translate(0, 0); }
-        .token.win-stack-2 { transform: scale(0.8) translate(10px, -5px); }
-        .token.win-stack-3 { transform: scale(0.8) translate(-10px, -5px); }
-        .token.win-stack-4 { transform: scale(0.8) translate(0, -10px); }
-
-        .token-red { color: #dc2626; }
-        .token-green { color: #16a34a; }
-        .token-blue { color: #2563eb; }
-        .token-yellow { color: #ca8a04; }
-
-        .highlight-move { animation: pulse-highlight 1.5s infinite; }
-        @keyframes pulse-highlight {
-            0% { transform: scale(1) translateY(-15%); filter: brightness(1) drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
-            50% { transform: scale(1.25) translateY(-25%); filter: brightness(1.2) drop-shadow(0 6px 6px rgba(0,0,0,0.2)); }
-            100% { transform: scale(1) translateY(-15%); filter: brightness(1) drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
-        }
-
-        /* Dice */
-        .dice-box {
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            cursor: pointer;
-            transition: transform 0.1s;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            color: #334155;
+            /* Gold Starburst Effect */
+            background: radial-gradient(circle, #fffbeb 0%, #fcd34d 100%);
+            box-shadow: inset 0 0 10px rgba(251, 191, 36, 0.5);
             position: relative;
-            opacity: 1 !important;
         }
-        .dice-box:active { transform: scale(0.95); }
-        .dice-rolling { animation: chaos-roll 0.4s linear infinite; }
-        
-        @keyframes chaos-roll {
-            0% { transform: rotate3d(1,1,1,0deg); }
-            100% { transform: rotate3d(1,1,1,360deg); }
-        }
-        
-        .dice-red { color: #ef4444; border: 2px solid #fee2e2; }
-        .dice-green { color: #22c55e; border: 2px solid #dcfce7; }
-        .dice-yellow { color: #eab308; border: 2px solid #fef9c3; }
-        .dice-blue { color: #3b82f6; border: 2px solid #dbeafe; }
-
-        /* Floating Chat */
-        #floating-chat-container {
+        /* Trophy Icon in Center */
+        .center-box::after {
+            content: '\f091';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
             position: absolute;
-            bottom: 90px;
-            left: 20px;
-            width: 300px;
-            max-width: 70%;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.6);
+            z-index: 5;
             pointer-events: none;
         }
-        .chat-bubble-float {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            color: #334155;
-            padding: 8px 14px;
-            border-radius: 18px;
-            border-bottom-left-radius: 4px;
-            margin-top: 8px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            opacity: 0;
-            transform: translateY(20px) scale(0.9);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.5s 5.5s forwards;
-            pointer-events: auto;
-        }
+
+        .tri-red { grid-area: r; background: transparent; clip-path: polygon(0 0, 100% 50%, 0 100%); border-right: 1px solid rgba(0,0,0,0.1); background-color: rgba(239, 68, 68, 0.2); }
+        .tri-green { grid-area: g; background: transparent; clip-path: polygon(0 0, 100% 0, 50% 100%); border-bottom: 1px solid rgba(0,0,0,0.1); background-color: rgba(34, 197, 94, 0.2); }
+        .tri-yellow { grid-area: y; background: transparent; clip-path: polygon(100% 0, 100% 100%, 0 50%); border-left: 1px solid rgba(0,0,0,0.1); background-color: rgba(234, 179, 8, 0.2); }
+        .tri-blue { grid-area: b; background: transparent; clip-path: polygon(50% 0, 0 100%, 100% 100%); border-top: 1px solid rgba(0,0,0,0.1); background-color: rgba(59, 130, 246, 0.2); }
+
+        /* Tokens */
+        .token { width: 65%; height: 65%; justify-self: center; align-self: center; z-index: 50; cursor: default; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.3)); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); min-width: 0; min-height: 0; }
+        .token.moveable { cursor: pointer; z-index: 60; }
+        .token svg { width: 100%; height: 100%; stroke: white; stroke-width: 30px; paint-order: stroke; overflow: visible;}
+        .token.stack-1 { transform: translate(0, -15%); } .token.stack-2 { transform: translate(15%, -30%); } .token.stack-3 { transform: translate(30%, -45%); } .token.stack-4 { transform: translate(-15%, -30%); }
+        .token.win-stack-1 { transform: scale(0.8) translate(0, 0); } .token.win-stack-2 { transform: scale(0.8) translate(10px, -5px); } .token.win-stack-3 { transform: scale(0.8) translate(-10px, -5px); } .token.win-stack-4 { transform: scale(0.8) translate(0, -10px); }
+        .token-red { color: #dc2626; } .token-green { color: #16a34a; } .token-blue { color: #2563eb; } .token-yellow { color: #ca8a04; }
+        .highlight-move { animation: pulse-highlight 1.5s infinite; }
+        @keyframes pulse-highlight { 0% { transform: scale(1) translateY(-15%); filter: brightness(1) drop-shadow(0 2px 2px rgba(0,0,0,0.5)); } 50% { transform: scale(1.25) translateY(-25%); filter: brightness(1.2) drop-shadow(0 6px 6px rgba(0,0,0,0.2)); } 100% { transform: scale(1) translateY(-15%); filter: brightness(1) drop-shadow(0 2px 2px rgba(0,0,0,0.5)); } }
+
+        /* Dice & UI */
+        .dice-box { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; transition: transform 0.1s; background: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); color: #334155; position: relative; opacity: 1 !important; }
+        .dice-box:active { transform: scale(0.95); }
+        .dice-rolling { animation: chaos-roll 0.4s linear infinite; }
+        @keyframes chaos-roll { 0% { transform: rotate3d(1,1,1,0deg); } 100% { transform: rotate3d(1,1,1,360deg); } }
+        .dice-red { color: #ef4444; border: 2px solid #fee2e2; } .dice-green { color: #22c55e; border: 2px solid #dcfce7; } .dice-yellow { color: #eab308; border: 2px solid #fef9c3; } .dice-blue { color: #3b82f6; border: 2px solid #dbeafe; }
+
+        /* Floating Chat */
+        #floating-chat-container { position: absolute; bottom: 90px; left: 20px; width: 300px; max-width: 70%; z-index: 100; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
+        .chat-bubble-float { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.9); color: #334155; padding: 8px 14px; border-radius: 18px; border-bottom-left-radius: 4px; margin-top: 8px; font-size: 0.9rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px) scale(0.9); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.5s 5.5s forwards; pointer-events: auto; }
         .chat-bubble-float strong { color: #64748b; text-transform: uppercase; font-size: 0.7rem; display: block; margin-bottom: 2px; }
-        @keyframes popIn { to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px) scale(0.95); } }
+        @keyframes popIn { to { opacity: 1; transform: translateY(0) scale(1); } } @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px) scale(0.95); } }
 
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .hidden { display: none !important; }
-        
         .btn-glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.5); transition: all 0.2s; }
         .btn-glass:hover { background: rgba(255,255,255,0.9); transform: translateY(-1px); }
         .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); }
@@ -240,25 +129,21 @@
 </head>
 <body class="text-slate-700">
 
-    <!-- Auth Screen -->
     <div id="auth-screen" class="fixed inset-0 z-[60] flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-blue-100">
-        <div class="glass-panel p-8 rounded-3xl w-full max-w-sm text-center">
+        <div class="glass-panel p-8 rounded-3xl w-full max-w-sm text-center shadow-xl">
             <div class="text-5xl mb-4">🎲</div>
-            <h1 class="text-3xl font-black text-slate-800 mb-2">Welcome</h1>
-            <p class="text-sm text-slate-500 mb-6">Enter credentials to play</p>
+            <h1 class="text-3xl font-black text-slate-800 mb-6">Ludo Master</h1>
             <div class="space-y-3">
                 <input type="text" id="login-username" class="w-full p-3 bg-white/50 border border-white rounded-xl outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-bold text-slate-700" placeholder="Username">
                 <input type="password" id="login-password" class="w-full p-3 bg-white/50 border border-white rounded-xl outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-bold text-slate-700" placeholder="Password">
-                <button onclick="window.attemptLogin()" class="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-transform active:scale-95">Log In / Register</button>
+                <button onclick="window.attemptLogin()" class="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-transform active:scale-95">Play Now</button>
             </div>
-            <div class="mt-4 flex flex-col gap-2">
-                <button onclick="document.getElementById('error-modal').classList.remove('hidden')" class="text-xs text-slate-400 hover:text-slate-600 underline">Show Firebase Setup Help</button>
-                <button onclick="window.skipLogin()" class="text-xs text-indigo-500 hover:text-indigo-700 font-bold">Play Offline (No Login)</button>
+            <div class="mt-6">
+                <button onclick="window.skipLogin()" class="text-sm text-indigo-500 hover:text-indigo-700 font-bold">Play as Guest</button>
             </div>
         </div>
     </div>
 
-    <!-- Main Menu -->
     <div id="main-menu" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-slate-200">
         <div class="glass-panel p-8 rounded-3xl max-w-md w-full text-center">
             <h1 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">Ludo Master</h1>
@@ -271,7 +156,6 @@
         </div>
     </div>
 
-    <!-- Online Menu -->
     <div id="online-menu" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-slate-100/90 backdrop-blur-sm">
         <div class="glass-panel p-8 rounded-3xl max-w-md w-full space-y-6">
             <div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Online Lobby</h2><button onclick="window.backToMain()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button></div>
@@ -287,7 +171,6 @@
         </div>
     </div>
 
-    <!-- Lobby Waiting -->
     <div id="lobby-waiting" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-white/95">
         <div class="text-center max-w-sm w-full space-y-6">
             <div class="inline-block p-4 bg-indigo-50 rounded-2xl mb-4 relative">
@@ -301,10 +184,7 @@
         </div>
     </div>
 
-    <!-- Game Screen -->
     <div id="game-ui" class="hidden flex-col h-full w-full">
-        
-        <!-- Header -->
         <div class="flex-none flex justify-between items-center px-3 py-1 bg-white/80 backdrop-blur-md border-b border-slate-200/50 z-20 h-12">
             <div class="flex items-center gap-3">
                 <div id="current-turn-indicator" class="w-3 h-3 rounded-full bg-slate-300 shadow-sm transition-all duration-300"></div>
@@ -318,26 +198,17 @@
             </div>
         </div>
 
-        <!-- Main Body -->
-        <div class="flex-1 flex flex-col md:flex-row overflow-hidden w-full relative">
-            
-            <!-- FLOATING CHAT OVERLAY -->
+        <div class="flex-1 flex flex-col items-center justify-center overflow-hidden w-full relative bg-slate-50/50">
             <div id="floating-chat-container"></div>
-            
-            <!-- Board Container -->
-            <div class="flex-1 flex items-center justify-center p-2 h-full w-full md:w-auto bg-slate-50/50">
-                <div class="ludo-board relative" id="board">
-                    <!-- Bases -->
-                    <div id="base-0" class="base base-red" style="grid-row: 10/16; grid-column: 1/7;"><div class="base-label text-red-900/40" id="name-0">P1</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
-                    <div id="base-1" class="base base-green" style="grid-row: 1/7; grid-column: 1/7;"><div class="base-label text-green-900/40" id="name-1">P2</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
-                    <div id="base-2" class="base base-yellow" style="grid-row: 1/7; grid-column: 10/16;"><div class="base-label text-yellow-900/40" id="name-2">P3</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
-                    <div id="base-3" class="base base-blue" style="grid-row: 10/16; grid-column: 10/16;"><div class="base-label text-blue-900/40" id="name-3">P4</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
-                    <div class="center-box"><div class="tri-green"></div><div class="tri-yellow"></div><div class="tri-red"></div><div class="tri-blue"></div></div>
-                </div>
+            <div class="ludo-board relative" id="board">
+                <div id="base-0" class="base base-red" style="grid-row: 10/16; grid-column: 1/7;"><div class="base-label text-red-900/40" id="name-0">P1</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
+                <div id="base-1" class="base base-green" style="grid-row: 1/7; grid-column: 1/7;"><div class="base-label text-green-900/40" id="name-1">P2</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
+                <div id="base-2" class="base base-yellow" style="grid-row: 1/7; grid-column: 10/16;"><div class="base-label text-yellow-900/40" id="name-2">P3</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
+                <div id="base-3" class="base base-blue" style="grid-row: 10/16; grid-column: 10/16;"><div class="base-label text-blue-900/40" id="name-3">P4</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
+                <div class="center-box"><div class="tri-green"></div><div class="tri-yellow"></div><div class="tri-red"></div><div class="tri-blue"></div></div>
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="flex-none bg-white/90 backdrop-blur border-t border-slate-200 p-2 flex items-center gap-3 z-30 h-16 shadow-[0_-4px_6px_rgba(0,0,0,0.02)]">
             <div class="flex-none w-20 flex items-center justify-center border-r border-slate-100 pr-2">
                 <div id="dice-visual" class="dice-box" onclick="window.attemptRoll()">
@@ -353,7 +224,6 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div id="give-up-modal" class="hidden modal">
         <div class="bg-white p-6 rounded-3xl shadow-2xl text-center max-w-xs mx-4 scale-100">
             <h3 class="text-xl font-black text-slate-800 mb-1">Give Up?</h3>
@@ -368,25 +238,12 @@
             <button onclick="window.exitGame()" class="w-full py-4 bg-slate-800 text-white rounded-xl font-bold shadow-xl hover:bg-slate-900 transition-transform hover:scale-105">Back to Menu</button>
         </div>
     </div>
-    
-    <!-- ERROR HELP MODAL -->
     <div id="error-modal" class="hidden modal">
         <div class="bg-white p-6 rounded-3xl shadow-2xl text-center max-w-sm mx-4 scale-100 border-l-4 border-red-500">
             <div class="text-4xl mb-2">⚠️</div>
             <h3 class="text-xl font-black text-slate-800 mb-2">Permission Denied</h3>
-            <p class="text-slate-600 mb-4 text-sm font-medium leading-relaxed">
-                Your Firebase Security Rules are blocking access.
-            </p>
-            <div class="bg-slate-100 p-3 rounded-xl text-left mb-4">
-                <p class="text-xs text-slate-500 font-bold mb-1">FIX IN FIREBASE CONSOLE:</p>
-                <ol class="list-decimal pl-4 text-xs text-slate-700 space-y-1">
-                    <li>Go to <a href="https://console.firebase.google.com/u/0/project/website-ca551/firestore/rules" target="_blank" class="text-indigo-600 underline">Firestore Database > Rules</a></li>
-                    <li>Change <code class="bg-slate-200 px-1 rounded">allow read, write: if false;</code></li>
-                    <li>To: <code class="bg-green-100 text-green-800 px-1 rounded font-mono">allow read, write: if true;</code></li>
-                    <li>Click <b>Publish</b></li>
-                </ol>
-            </div>
-            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg hover:bg-slate-900">OK, I Fixed It</button>
+            <p class="text-slate-600 mb-4 text-sm font-medium leading-relaxed">Your Firebase Security Rules are blocking access.</p>
+            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg hover:bg-slate-900">OK</button>
         </div>
     </div>
 
@@ -394,10 +251,9 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// --- CONFIGURATION ---
 const firebaseConfig = {
     apiKey: "AIzaSyDyftShVByBykSgDi6loVFgu76loF7Ey-M",
     authDomain: "website-ca551.firebaseapp.com",
@@ -409,20 +265,18 @@ const firebaseConfig = {
 };
 
 const COLORS = ['red', 'green', 'yellow', 'blue'];
-const SAFE_SPOTS = [9, 22, 35, 48]; // Stars
+const SAFE_SPOTS = [9, 22, 35, 48];
 const START_INDICES = { red: 1, green: 14, yellow: 27, blue: 40 };
 const BASE_POSITIONS = {
     red: [[11,2], [11,5], [14,2], [14,5]], green: [[2,2], [2,5], [5,2], [5,5]],
     yellow: [[2,11], [2,14], [5,11], [5,14]], blue: [[11,11], [11,14], [14,11], [14,14]]
 };
-
 const MAIN_PATH = [
     [15,7],[14,7],[13,7],[12,7],[11,7],[10,7], [9,6],[9,5],[9,4],[9,3],[9,2],[9,1], [8,1],
     [7,1],[7,2],[7,3],[7,4],[7,5],[7,6], [6,7],[5,7],[4,7],[3,7],[2,7],[1,7], [1,8],
     [1,9],[2,9],[3,9],[4,9],[5,9],[6,9], [7,10],[7,11],[7,12],[7,13],[7,14],[7,15], [8,15],
     [9,15],[9,14],[9,13],[9,12],[9,11],[9,10], [10,9],[11,9],[12,9],[13,9],[14,9],[15,9], [15,8]
 ]; 
-
 const HOME_PATHS = {
     red: [[14,8],[13,8],[12,8],[11,8],[10,8]], green: [[8,2],[8,3],[8,4],[8,5],[8,6]],
     yellow: [[2,8],[3,8],[4,8],[5,8],[6,8]], blue: [[8,14],[8,13],[8,12],[8,11],[8,10]]
@@ -437,8 +291,8 @@ const db = getFirestore(app);
 let myPlayerId = null, roomId = null, roomUnsubscribe = null;
 let currentUser = { name: 'Player', password: '' };
 let sfxEnabled = true;
-
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
 const playSound = (type) => {
     if(!sfxEnabled) return;
     try {
@@ -454,7 +308,6 @@ const playSound = (type) => {
     } catch(e){}
 };
 
-// --- HELPER FUNCTIONS ---
 function showScreen(screenId) {
     ['auth-screen', 'main-menu', 'online-menu', 'lobby-waiting', 'game-ui', 'give-up-modal', 'victory-modal', 'error-modal'].forEach(id => {
         document.getElementById(id).classList.add('hidden');
@@ -466,51 +319,56 @@ function showScreen(screenId) {
 
 window.toggleSFX = () => { sfxEnabled = !sfxEnabled; document.querySelector('#btn-sfx i').className = sfxEnabled ? 'fas fa-music' : 'fas fa-slash text-red-400'; showToast(`SFX ${sfxEnabled?'On':'Off'}`); };
 
-window.toggleMic = async () => {
-    const btn = document.getElementById('btn-mic');
-    const icon = btn.querySelector('i');
-    if(icon.classList.contains('fa-microphone-slash')) {
-        try { 
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-            icon.className = 'fas fa-microphone text-green-500';
-            showToast("Mic On");
-        } catch(e) { showToast("Mic Denied"); }
-    } else { 
-        icon.className = 'fas fa-microphone-slash text-slate-500';
-        showToast("Mic Off");
-    }
-};
-window.toggleSpeaker = () => {
-    const btn = document.getElementById('btn-speaker');
-    const icon = btn.querySelector('i');
-    if(icon.classList.contains('fa-volume-up')) {
-        icon.className = 'fas fa-volume-mute text-red-400';
-        showToast("Muted");
-    } else {
-        icon.className = 'fas fa-volume-up text-slate-500';
-        showToast("Unmuted");
-    }
-};
-
-
+// --- SESSION MANAGEMENT ---
 async function initAuth() {
     try {
+        // 1. Auto-Login from LocalStorage
         const saved = localStorage.getItem('ludo_user');
         if(saved) {
-            const c = JSON.parse(saved);
-            document.getElementById('login-username').value = c.name;
-            document.getElementById('login-password').value = c.password;
+            currentUser = JSON.parse(saved);
+            loginSuccess(currentUser.name, currentUser.password, true); // True = Skip toast
         }
-        await signInAnonymously(auth);
         
+        await signInAnonymously(auth);
+
+        // 2. Check for External Link Join
         const params = new URLSearchParams(window.location.search);
-        const roomCode = params.get('room');
-        if(roomCode) {
-            document.getElementById('room-code-input').value = roomCode;
-            if(saved) setTimeout(() => window.joinRoom(), 1000); 
+        const linkRoom = params.get('room');
+        if(linkRoom) {
+            document.getElementById('room-code-input').value = linkRoom;
+            if(saved) setTimeout(() => window.joinRoom(), 500);
+            return; 
         }
+
+        // 3. Reconnect to Active Session (Refresh Handling)
+        const activeRoom = localStorage.getItem('ludo_current_room');
+        if(activeRoom && saved) {
+            rejoinSession(activeRoom);
+        }
+
     } catch(e) { console.error("Auth Init:", e); }
 }
+
+async function rejoinSession(code) {
+    if(!auth.currentUser) await signInAnonymously(auth);
+    myPlayerId = auth.currentUser.uid;
+    roomId = code;
+    const ref = doc(db, 'ludo_rooms', code);
+    const d = await getDoc(ref);
+    if(d.exists()) {
+        const players = d.data().players;
+        // Verify we are actually in this room
+        if(players.some(p => p.id === myPlayerId)) {
+            showToast("Rejoining Game...");
+            enterLobby(code); // Logic handles both LOBBY and PLAYING states
+        } else {
+            localStorage.removeItem('ludo_current_room'); // We were kicked or game ended
+        }
+    } else {
+        localStorage.removeItem('ludo_current_room'); // Room expired
+    }
+}
+
 initAuth();
 onAuthStateChanged(auth, u => { if(u) myPlayerId = u.uid; });
 
@@ -532,7 +390,6 @@ window.attemptLogin = async () => {
             loginSuccess(u, p);
         }
     } catch(e) { 
-        console.error(e); 
         if(e.code === 'permission-denied') document.getElementById('error-modal').classList.remove('hidden');
         else showToast("Login Error: " + e.code); 
     }
@@ -544,15 +401,15 @@ window.skipLogin = async () => {
     document.getElementById('display-username').innerText = "Guest";
 };
 
-function loginSuccess(u, p) {
+function loginSuccess(u, p, silent=false) {
     currentUser = { name: u, password: p };
     localStorage.setItem('ludo_user', JSON.stringify(currentUser));
     showScreen('main-menu');
     document.getElementById('display-username').innerText = u;
     document.getElementById('online-player-name').innerText = u;
-    showToast(`Welcome ${u}`);
+    if(!silent) showToast(`Welcome ${u}`);
 }
-window.logout = () => { localStorage.removeItem('ludo_user'); window.location.reload(); };
+window.logout = () => { localStorage.removeItem('ludo_user'); localStorage.removeItem('ludo_current_room'); window.location.reload(); };
 
 const boardEl = document.getElementById('board');
 function createBoard() {
@@ -566,25 +423,26 @@ function createBoard() {
     Object.keys(HOME_PATHS).forEach(k => {
         const coords = HOME_PATHS[k];
         for(let i=0; i<coords.length; i++) {
-            const pos = coords[i];
             const c = document.createElement('div');
-            c.className = `cell path-${k}`; c.style.gridRow = pos[0]; c.style.gridColumn = pos[1];
+            c.className = `cell path-${k}`; c.style.gridRow = coords[i][0]; c.style.gridColumn = coords[i][1];
             boardEl.appendChild(c);
         }
     });
 }
 createBoard();
 
-// --- Logic ---
+// --- MULTIPLAYER LOGIC ---
 function enterLobby(code) {
     showScreen('lobby-waiting');
     document.getElementById('display-room-code').innerText = code;
+    localStorage.setItem('ludo_current_room', code); // Session Persistence
+
     roomUnsubscribe = onSnapshot(doc(db, 'ludo_rooms', code), sn => {
         const d = sn.data();
         if(!d) return;
         if(d.status === 'LOBBY') {
             const list = document.getElementById('lobby-players');
-            list.innerHTML = d.players.map(p => `<div class="p-3 bg-white rounded-xl shadow-sm text-sm border-l-4 border-${COLORS[p.color]}-500 font-bold">${p.name}</div>`).join('');
+            list.innerHTML = d.players.map(p => `<div class="p-3 bg-white rounded-xl shadow-sm text-sm border-l-4 border-${COLORS[p.color]}-500 font-bold flex justify-between"><span>${p.name}</span> <span class="text-xs text-slate-400 self-center">${COLORS[p.color].toUpperCase()}</span></div>`).join('');
             if(d.host === myPlayerId && d.players.length > 1) document.getElementById('start-online-btn').classList.remove('hidden');
         } else if(d.status === 'PLAYING') {
             if(gameState.mode !== 'online') startOnline(d); else syncState(d);
@@ -593,7 +451,13 @@ function enterLobby(code) {
 }
 
 function startOnline(d) {
-    gameState.mode = 'online'; gameState.players = d.players; while(gameState.players.length < 4) gameState.players.push(null);
+    gameState.mode = 'online'; 
+    // MAPPING LOGIC: Map players to their specific Color Index Slots
+    gameState.players = [null, null, null, null];
+    d.players.forEach(p => {
+        if(p.color >= 0 && p.color < 4) gameState.players[p.color] = p;
+    });
+    
     showScreen('game-ui');
     syncState(d);
 }
@@ -601,15 +465,13 @@ function startOnline(d) {
 function syncState(d) {
     gameState.turn = d.turn; gameState.diceValue = d.diceValue; gameState.waitingForMove = d.waitingForMove;
     gameState.pieces = JSON.parse(d.pieces); updateUI(); renderPieces(); 
-    handleChatUpdates(d.chat);
+    if(d.chat) handleChatUpdates(d.chat);
 }
 
 function handleChatUpdates(messages) {
-    if (!messages) return;
     const newCount = messages.length;
     if (newCount > gameState.chatCount) {
-        const newMsgs = messages.slice(gameState.chatCount);
-        newMsgs.forEach(msg => spawnFloatingBubble(msg));
+        messages.slice(gameState.chatCount).forEach(msg => spawnFloatingBubble(msg));
         gameState.chatCount = newCount;
     }
 }
@@ -624,26 +486,21 @@ function spawnFloatingBubble(msg) {
 }
 
 window.createRoom = async () => {
-    if(!auth.currentUser) {
-        showToast("Authenticating...");
-        try { await signInAnonymously(auth); } catch(e) { return showToast("Auth Failed"); }
-    }
+    if(!auth.currentUser) { showToast("Auth Error"); return; }
     const name = currentUser.name || 'Host';
     const code = Math.random().toString(36).substr(2,6).toUpperCase();
-    showToast("Creating Room..."); 
     try {
         myPlayerId = auth.currentUser.uid; roomId = code;
         const initialPieces = JSON.stringify(Array(4).fill(0).map(() => Array(4).fill(0).map(() => ({s:'BASE', p:0}))));
         await setDoc(doc(db, 'ludo_rooms', code), {
             status: 'LOBBY', host: myPlayerId, chat: [], 
-            players: [{id:myPlayerId, name: name, color:0, type:'remote'}],
+            players: [{id:myPlayerId, name: name, color:0, type:'remote'}], // Host is Red (0)
             pieces: initialPieces, turn: 0, diceValue: 0, waitingForMove: false, lastUpdated: serverTimestamp()
         });
         enterLobby(code);
     } catch(e) { 
-        console.error(e); 
         if(e.code === 'permission-denied') document.getElementById('error-modal').classList.remove('hidden');
-        else showToast("Connection Error: " + (e.message || "Unknown"));
+        else showToast("Error: " + e.message);
     }
 };
 
@@ -657,12 +514,22 @@ window.joinRoom = async () => {
         if(!d.exists()) return showToast("Room not found");
         const players = d.data().players;
         if(players.length >= 4) return showToast("Room Full");
+        
         myPlayerId = auth.currentUser.uid; roomId = code;
+        
         if(!players.some(p => p.id === myPlayerId)) {
-            await updateDoc(ref, { players: [...players, {id:myPlayerId, name: name, color:players.length, type:'remote'}] });
+            // --- OPPOSITE SEATING LOGIC ---
+            const takenColors = players.map(p => p.color);
+            let newColor = 0;
+            if(!takenColors.includes(2)) newColor = 2;      // 2nd Player -> YELLOW (Opposite Red)
+            else if(!takenColors.includes(1)) newColor = 1; // 3rd Player -> GREEN
+            else if(!takenColors.includes(3)) newColor = 3; // 4th Player -> BLUE
+            else return showToast("Room Full"); 
+
+            await updateDoc(ref, { players: [...players, {id:myPlayerId, name: name, color:newColor, type:'remote'}] });
         }
         enterLobby(code);
-    } catch(e) { showToast("Join Failed"); }
+    } catch(e) { showToast("Join Failed"); console.error(e); }
 };
 
 window.startOnlineGame = () => updateDoc(doc(db, 'ludo_rooms', roomId), { status: 'PLAYING' });
@@ -678,7 +545,7 @@ window.startGame = (mode) => {
         mode, turn: 0, diceValue: 0, waitingForMove: false, isProcessing: false, winners: [], chatCount: 0,
         pieces: Array(4).fill(0).map(() => Array(4).fill(0).map(() => ({s:'BASE', p:0}))),
         players: mode === 'local' 
-            ? [{id:'p1',name:currentUser.name||'You',color:0,type:'human'}, null, {id:'bot',name:'CPU',color:2,type:'bot'}, null]
+            ? [{id:'p1',name:currentUser.name||'You',color:0,type:'human'}, null, {id:'bot',name:'CPU',color:2,type:'bot'}, null] // Local: Red vs Yellow
             : []
     };
     showScreen('game-ui');
@@ -689,20 +556,31 @@ window.startGame = (mode) => {
 function updateUI() {
     const p = gameState.players[gameState.turn];
     const color = COLORS[gameState.turn];
-    document.getElementById('turn-text').innerText = `${p ? p.name : 'Unknown'}'s Turn`;
-    document.getElementById('turn-text').style.color = color === 'yellow' ? '#d97706' : '#334155';
-    document.getElementById('current-turn-indicator').className = `w-3 h-3 rounded-full bg-${color === 'yellow' ? 'yellow-500' : color + '-500'}`;
+    if(p) {
+        document.getElementById('turn-text').innerText = `${p.name}'s Turn`;
+        document.getElementById('turn-text').style.color = color === 'yellow' ? '#d97706' : '#334155';
+        document.getElementById('current-turn-indicator').className = `w-3 h-3 rounded-full bg-${color === 'yellow' ? 'yellow-500' : color + '-500'}`;
+    }
     const diceBox = document.getElementById('dice-visual');
     if(gameState.diceValue === 0) diceBox.innerHTML = '<i class="fas fa-dice-six"></i>';
     else diceBox.innerHTML = `<i class="fas fa-dice-${['one','two','three','four','five','six'][gameState.diceValue-1]}"></i>`;
     diceBox.className = `dice-box dice-${color}`;
     
+    // Reset all bases first
+    [0,1,2,3].forEach(i => {
+        const lbl = document.getElementById(`name-${i}`);
+        const base = document.getElementById(`base-${i}`);
+        base.classList.add('inactive'); lbl.style.display = 'none';
+    });
+
+    // Activate current players
     gameState.players.forEach((pl, idx) => {
-        const lbl = document.getElementById(`name-${idx}`);
-        const base = document.getElementById(`base-${idx}`);
-        if(lbl) {
-            if(pl) { lbl.innerText = pl.name.substring(0,8); base.classList.remove('inactive'); lbl.style.display = 'block'; } 
-            else { base.classList.add('inactive'); lbl.style.display = 'none'; }
+        if(pl) {
+            const lbl = document.getElementById(`name-${idx}`);
+            const base = document.getElementById(`base-${idx}`);
+            lbl.innerText = pl.name.substring(0,8); 
+            base.classList.remove('inactive'); 
+            lbl.style.display = 'block';
         }
     });
 }
@@ -722,22 +600,17 @@ function renderPieces() {
             } else if(piece.s === 'HOME') {
                 [r,c] = HOME_PATHS[COLORS[pIdx]][piece.p];
             }
-
             const key = `${r},${c}`;
             cellCounts[key] = (cellCounts[key] || 0) + 1;
             const stack = cellCounts[key];
             const id = `token-${pIdx}-${tIdx}`;
             let el = document.getElementById(id);
             if(!el) {
-                el = document.createElement('div');
-                el.id = id;
-                el.className = `token token-${COLORS[pIdx]}`;
-                el.innerHTML = PAWN_SVG;
+                el = document.createElement('div'); el.id = id; el.className = `token token-${COLORS[pIdx]}`; el.innerHTML = PAWN_SVG;
                 el.onclick = (e) => { e.stopPropagation(); if(isCurrentPlayerTurn()) handleTokenClick(pIdx, tIdx); };
                 boardEl.appendChild(el);
             }
-            el.style.gridRow = r;
-            el.style.gridColumn = c;
+            el.style.gridRow = r; el.style.gridColumn = c;
             el.classList.remove('stack-1', 'stack-2', 'stack-3', 'stack-4', 'win-stack-1', 'win-stack-2', 'win-stack-3', 'win-stack-4', 'highlight-move', 'moveable');
             if(piece.s === 'WIN') { if(stack > 0) el.classList.add(`win-stack-${Math.min(stack,4)}`); }
             else { if(stack > 1) el.classList.add(`stack-${Math.min(stack,4)}`); }
@@ -776,7 +649,6 @@ function handleRollResult(roll) {
     const moves = getPossibleMoves(gameState.turn, roll);
     if(moves.length === 0) setTimeout(nextTurn, 1000);
     else {
-        // Auto-Move Single Option
         if(moves.length === 1 && isCurrentPlayerTurn() && gameState.players[gameState.turn].type !== 'bot') {
             gameState.waitingForMove = true; renderPieces();
             setTimeout(() => executeMove(gameState.turn, moves[0]), 500);
@@ -830,7 +702,7 @@ async function executeMove(pIdx, tIdx) {
         const allSafe = [1, 14, 27, 40, ...SAFE_SPOTS];
         if(!allSafe.includes(myGlob)) {
             gameState.pieces.forEach((opps, oIdx) => {
-                if(oIdx !== pIdx) opps.forEach(op => {
+                if(oIdx !== pIdx && gameState.players[oIdx]) opps.forEach(op => {
                     const opStart = START_INDICES[COLORS[oIdx]];
                     if(op.s === 'PATH' && (opStart + op.p)%52 === myGlob) { 
                         op.s = 'BASE'; op.p = 0; showToast("Captured!"); playSound('win'); bonusTurn = true;
@@ -855,7 +727,11 @@ async function executeMove(pIdx, tIdx) {
 function nextTurn() {
     gameState.diceValue = 0; gameState.waitingForMove = false; gameState.isProcessing = false;
     let loops = 0;
-    do { gameState.turn = (gameState.turn + 1) % 4; loops++; } while((!gameState.players[gameState.turn] || gameState.winners.includes(gameState.turn)) && loops < 4);
+    do { 
+        gameState.turn = (gameState.turn + 1) % 4; 
+        loops++; 
+    } while((!gameState.players[gameState.turn] || gameState.winners.includes(gameState.turn)) && loops < 4);
+    
     if(gameState.mode === 'online') pushGameState();
     else { 
         updateUI(); renderPieces(); playSound('turn');
@@ -884,14 +760,13 @@ function evaluateMoveScore(pIdx, tIdx, roll) {
     let isHome = false, isWin = false;
     if(p.s === 'PATH' && nextP > 50) { isHome = true; nextP -= 51; } else if(p.s === 'HOME') { if(nextP === 5) isWin = true; }
     if(isWin) return 1000; if(isHome) return 50;
-    
     const startIdx = START_INDICES[COLORS[pIdx]];
     const targetGlob = (startIdx + nextP) % 52;
     const allSafe = [1, 14, 27, 40, ...SAFE_SPOTS];
     if(!allSafe.includes(targetGlob)) {
         let capture = false;
         gameState.pieces.forEach((opps, oIdx) => {
-            if(oIdx !== pIdx) opps.forEach(op => {
+            if(oIdx !== pIdx && gameState.players[oIdx]) opps.forEach(op => {
                 const opStart = START_INDICES[COLORS[oIdx]];
                 if(op.s === 'PATH' && (opStart + op.p)%52 === targetGlob) capture = true;
             });
@@ -923,8 +798,7 @@ function showToast(msg) {
 window.showGiveUp = () => document.getElementById('give-up-modal').classList.remove('hidden');
 window.confirmGiveUp = async () => { 
     document.getElementById('give-up-modal').classList.add('hidden'); 
-    
-    // Notify others before leaving
+    localStorage.removeItem('ludo_current_room');
     if(gameState.mode === 'online' && roomId && myPlayerId) {
          try {
              const p = gameState.players.find(pl => pl?.id === myPlayerId);
@@ -934,7 +808,6 @@ window.confirmGiveUp = async () => {
              });
          } catch(e) { console.log(e); }
     }
-    
     showToast("You gave up!"); 
     setTimeout(() => window.exitGame(), 1000); 
 };
@@ -942,9 +815,7 @@ window.sendChat = async () => {
     const input = document.getElementById('chat-input');
     const txt = input.value.trim();
     if(!txt) return;
-    if(gameState.mode === 'local') {
-        renderChat([{name: currentUser.name || 'You', color: 0, text: txt}]); input.value = ''; return;
-    }
+    if(gameState.mode === 'local') { renderChat([{name: currentUser.name || 'You', color: 0, text: txt}]); input.value = ''; return; }
     if(!roomId) return;
     const p = gameState.players.find(pl => pl?.id === myPlayerId);
     await updateDoc(doc(db, 'ludo_rooms', roomId), { chat: arrayUnion({name: p ? p.name : 'User', color: p ? p.color : -1, text: txt}) });
@@ -953,12 +824,10 @@ window.sendChat = async () => {
 window.handleChatKey = (e) => { if(e.key === 'Enter') window.sendChat(); }
 
 function renderChat(messages) {
-    // Only process new messages if list is longer
     if (!messages) return;
     const newCount = messages.length;
     if (newCount > gameState.chatCount) {
-        const newMsgs = messages.slice(gameState.chatCount);
-        newMsgs.forEach(msg => spawnFloatingBubble(msg));
+        messages.slice(gameState.chatCount).forEach(msg => spawnFloatingBubble(msg));
         gameState.chatCount = newCount;
     }
 }
@@ -968,9 +837,7 @@ window.copyRoomLink = () => {
     navigator.clipboard.writeText(url).then(() => showToast("Link Copied!"));
 };
 window.exitGame = async () => {
-    if(gameState.mode === 'online' && roomId && myPlayerId) {
-         // Cleanup online presence if needed (optional for simple apps)
-    }
+    localStorage.removeItem('ludo_current_room');
     if (roomUnsubscribe) roomUnsubscribe();
     gameState.mode = null;
     showScreen('main-menu');
@@ -980,6 +847,11 @@ window.exitGame = async () => {
 window.attemptRoll = attemptRoll;
 window.showOnlineMenu = () => showScreen('online-menu');
 window.backToMain = () => showScreen('main-menu');
+
+// --- OTHER UTILS ---
+window.toggleMic = async () => { const btn = document.getElementById('btn-mic'); const icon = btn.querySelector('i'); if(icon.classList.contains('fa-microphone-slash')) { try { await navigator.mediaDevices.getUserMedia({ audio: true }); icon.className = 'fas fa-microphone text-green-500'; showToast("Mic On"); } catch(e) { showToast("Mic Denied"); } } else { icon.className = 'fas fa-microphone-slash text-slate-500'; showToast("Mic Off"); } };
+window.toggleSpeaker = () => { const btn = document.getElementById('btn-speaker'); const icon = btn.querySelector('i'); if(icon.classList.contains('fa-volume-up')) { icon.className = 'fas fa-volume-mute text-red-400'; showToast("Muted"); } else { icon.className = 'fas fa-volume-up text-slate-500'; showToast("Unmuted"); } };
+
 </script>
 </body>
-</html> 
+</html>
