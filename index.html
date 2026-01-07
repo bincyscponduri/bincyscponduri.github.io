@@ -533,7 +533,6 @@ window.joinRoom = async () => {
         
         myPlayerId = auth.currentUser.uid; roomId = code;
         
-        // CHECK IF JOINING NEW OR REJOINING
         if(!players.some(p => p.id === myPlayerId)) {
             const takenColors = players.filter(p => p.status!=='left').map(p => p.color);
             let newColor = 0; 
@@ -853,7 +852,7 @@ async function finalizeMove(pIdx, tIdx) {
     let bonusTurn = false;
     let capture = false;
     
-    // CAPTURE LOGIC
+    // CAPTURE LOGIC WITH SAFE SPOT CHECK
     if(p.s === 'PATH') {
         const startIdx = START_INDICES[pIdx]; const myGlob = (startIdx + p.p) % 52; 
         if(!SAFE_SPOTS.includes(myGlob) && ![1,14,27,40].includes(myGlob)) {
@@ -897,25 +896,31 @@ async function finalizeMove(pIdx, tIdx) {
     }
 }
 
+// DETERMINISTIC TURN LOGIC
 function nextTurn() {
     gameState.diceValue = 0; 
     gameState.waitingForMove = false; 
     gameState.isProcessing = false;
 
-    let current = gameState.turn;
-    let loops = 0;
-    do {
-        current = (current + 1) % 4;
-        loops++;
-    } while (
-        loops < 4 && 
-        (!gameState.players[current] || 
-         gameState.players[current].status === 'left' || 
-         gameState.winners.includes(current))
-    );
-
-    gameState.turn = current;
+    // Build ordered list of active players indices [0, 2, 3...]
+    const activeIndices = gameState.players
+        .map((p, idx) => ({ p, idx }))
+        .filter(item => item.p && item.p.status === 'active' && !gameState.winners.includes(item.idx))
+        .map(item => item.idx)
+        .sort((a,b) => a-b);
     
+    if (activeIndices.length > 0) {
+        const currentIndexInList = activeIndices.indexOf(gameState.turn);
+        // If current not found (left game), start from 0 index of list
+        if (currentIndexInList === -1) {
+             gameState.turn = activeIndices[0];
+        } else {
+             // Cycle to next
+             const nextIndex = (currentIndexInList + 1) % activeIndices.length;
+             gameState.turn = activeIndices[nextIndex];
+        }
+    }
+
     checkActivePlayers();
     if(gameState.mode === 'online') {
         pushGameState(null); // Clear animation flag
