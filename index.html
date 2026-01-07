@@ -9,116 +9,83 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        /* Layout */
-        body {
-            height: 100dvh; 
-            width: 100vw;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-            font-family: 'Nunito', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Board */
-        .ludo-board {
-            display: grid;
-            grid-template-columns: repeat(15, 1fr);
-            grid-template-rows: repeat(15, 1fr);
-            width: 95vw; height: 95vw;
-            max-width: 65vh; max-height: 65vh; 
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
-            position: relative;
-            overflow: hidden;
-            border: 4px solid white;
-            z-index: 10;
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @media (min-width: 768px) {
-            .ludo-board { width: 75vh; height: 75vh; max-width: 600px; max-height: 600px; }
-        }
-
-        .cell { border: 1px solid #e2e8f0; position: relative; display: flex; align-items: center; justify-content: center; overflow: visible; min-width: 0; min-height: 0; }
-
-        /* Bases */
-        .base { grid-row: span 6; grid-column: span 6; padding: 12%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; position: relative; border-radius: 4px; transition: all 0.3s; }
-        .base.left-game { filter: grayscale(100%); opacity: 0.5; }
-        .base.left-game::after { content: 'LEFT'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 2rem; font-weight: 900; color: #475569; opacity: 0.8; }
+        /* --- LAYOUT & BASICS --- */
+        body { height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); font-family: 'Nunito', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        .base-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; font-weight: 900; color: rgba(0,0,0,0.3); pointer-events: none; text-transform: uppercase; z-index: 0; letter-spacing: 1px; text-align: center; width: 100%; text-shadow: 0 1px 0 rgba(255,255,255,0.5); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        
+        /* --- BOARD --- */
+        .board-wrapper {
+            width: 95vw; height: 95vw; max-width: 65vh; max-height: 65vh; position: relative;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ludo-board { 
+            display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); 
+            width: 100%; height: 100%; background: white; border-radius: 12px; 
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2); 
+            overflow: hidden; border: 4px solid white; z-index: 10; 
+        }
+        .cell { border: 1px solid #e2e8f0; position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; }
+
+        /* --- VISUAL COLORS --- */
         .base-red { background: linear-gradient(145deg, #fca5a5, #ef4444); border: 1px solid #b91c1c; }
         .base-green { background: linear-gradient(145deg, #86efac, #22c55e); border: 1px solid #15803d; }
-        .base-blue { background: linear-gradient(145deg, #93c5fd, #3b82f6); border: 1px solid #1d4ed8; }
         .base-yellow { background: linear-gradient(145deg, #fde047, #eab308); border: 1px solid #a16207; }
-        .base-inner { background: white; border-radius: 50%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); z-index: 1; }
+        .base-blue { background: linear-gradient(145deg, #93c5fd, #3b82f6); border: 1px solid #1d4ed8; }
 
-        /* Path Colors */
-        .path-red { background-color: #ef4444; } .path-green { background-color: #22c55e; } .path-blue { background-color: #3b82f6; } .path-yellow { background-color: #eab308; }
-        .safe-spot::after { content: '\f005'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: rgba(0,0,0,0.2); font-size: 0.75rem; position: absolute; z-index: 0; }
-        .start-point { background-image: radial-gradient(circle, rgba(0,0,0,0.15) 25%, transparent 25%); background-size: 100% 100%; }
+        .path-red { background-color: #ef4444 !important; } 
+        .path-green { background-color: #22c55e !important; } 
+        .path-yellow { background-color: #eab308 !important; } 
+        .path-blue { background-color: #3b82f6 !important; }
 
-        /* Center Box */
-        .center-box { grid-column: 7 / span 3; grid-row: 7 / span 3; display: grid; grid-template-areas: "g g y" "r x y" "r b b"; z-index: 1; background: radial-gradient(circle, #fffbeb 0%, #fcd34d 100%); box-shadow: inset 0 0 10px rgba(251, 191, 36, 0.5); position: relative; }
-        
-        /* New Center Icon Element (Replaces Pseudo-element) */
-        #center-trophy {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 2rem; color: rgba(255, 255, 255, 0.6); z-index: 5; pointer-events: none;
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .tri-red { grid-area: r; background: transparent; clip-path: polygon(0 0, 100% 50%, 0 100%); border-right: 1px solid rgba(0,0,0,0.1); background-color: rgba(239, 68, 68, 0.2); }
-        .tri-green { grid-area: g; background: transparent; clip-path: polygon(0 0, 100% 0, 50% 100%); border-bottom: 1px solid rgba(0,0,0,0.1); background-color: rgba(34, 197, 94, 0.2); }
-        .tri-yellow { grid-area: y; background: transparent; clip-path: polygon(100% 0, 100% 100%, 0 50%); border-left: 1px solid rgba(0,0,0,0.1); background-color: rgba(234, 179, 8, 0.2); }
-        .tri-blue { grid-area: b; background: transparent; clip-path: polygon(50% 0, 0 100%, 100% 100%); border-top: 1px solid rgba(0,0,0,0.1); background-color: rgba(59, 130, 246, 0.2); }
+        .safe-spot::after { content: '\f005'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: rgba(0,0,0,0.2); font-size: 0.8rem; position: absolute; z-index: 0; }
+        .start-point { background-image: radial-gradient(circle, rgba(0,0,0,0.2) 40%, transparent 40%) !important; }
 
         /* Tokens */
-        .token { width: 65%; height: 65%; justify-self: center; align-self: center; z-index: 50; cursor: default; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.3)); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); min-width: 0; min-height: 0; position: relative; }
-        .token.moveable { cursor: pointer; z-index: 60; }
+        .token { width: 80%; height: 80%; justify-self: center; align-self: center; z-index: 200 !important; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.3)); transition: transform 0.3s; min-width: 0; min-height: 0; position: relative; pointer-events: auto; cursor: pointer; }
+        .token-red { color: #dc2626; } .token-green { color: #16a34a; } .token-yellow { color: #ca8a04; } .token-blue { color: #2563eb; }
         .token svg { width: 100%; height: 100%; stroke: white; stroke-width: 30px; paint-order: stroke; overflow: visible;}
-        .token-red { color: #dc2626; } .token-green { color: #16a34a; } .token-blue { color: #2563eb; } .token-yellow { color: #ca8a04; }
         
-        /* Highlights */
-        .highlight-move { z-index: 100 !important; filter: brightness(1.1); }
-        /* Arrow Indicator - Rotates with token so it stays "above" it */
-        .highlight-move::after {
-            content: '\f0d7'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
-            position: absolute; top: -35px; left: 50%; transform: translateX(-50%);
-            font-size: 24px; color: #1e293b; text-shadow: 0 2px 0 white, 0 0 10px rgba(255,255,255,0.8);
-            animation: bounce-arrow 0.8s infinite ease-in-out; pointer-events: none;
-        }
-        .highlight-move::before {
-            content: ''; position: absolute; width: 140%; height: 140%;
-            border-radius: 50%; border: 3px solid #fbbf24;
-            top: -20%; left: -20%; animation: ring-pulse 1.2s infinite;
-            pointer-events: none; box-sizing: border-box;
-        }
+        .token.moveable { z-index: 500 !important; filter: brightness(1.2) drop-shadow(0 5px 5px rgba(0,0,0,0.4)); }
+        .token.moveable svg { animation: pulse-token 1s infinite; }
+        @keyframes pulse-token { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        
+        .highlight-move::after { content: '\f0d7'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; top: -40px; left: 50%; transform: translateX(-50%); font-size: 28px; color: #1e293b; text-shadow: 0 2px 0 white, 0 0 10px rgba(255,255,255,0.8); animation: bounce-arrow 0.8s infinite; pointer-events: none; z-index: 600; }
+        @keyframes bounce-arrow { 0%, 100% { top: -40px; } 50% { top: -50px; } }
 
-        @keyframes bounce-arrow { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-10px); } }
-        @keyframes ring-pulse { 0% { transform: scale(0.8); opacity: 1; border-width: 4px; } 100% { transform: scale(1.4); opacity: 0; border-width: 0px; } }
+        .base { grid-row: span 6; grid-column: span 6; padding: 12%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; position: relative; border-radius: 4px; }
+        .base-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; font-weight: 900; color: rgba(0,0,0,0.3); pointer-events: none; text-transform: uppercase; width: 100%; text-align: center; transition: transform 0.8s ease; }
+        .base-inner { background: white; border-radius: 50%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+        .base-inactive { filter: grayscale(100%); opacity: 0.4; }
+        
+        .center-box { grid-column: 7 / span 3; grid-row: 7 / span 3; display: grid; grid-template-areas: "g g y" "r x y" "r b b"; z-index: 1; background: white; position: relative; }
+        #center-trophy { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; color: rgba(0,0,0,0.15); z-index: 5; pointer-events: none; transition: transform 0.8s ease; }
+        .tri { width:100%; height:100%; opacity: 0.2; } 
+        #tri-0 { grid-area: r; clip-path: polygon(0 0, 100% 50%, 0 100%); background-color: #ef4444; } 
+        #tri-1 { grid-area: g; clip-path: polygon(0 0, 100% 0, 50% 100%); background-color: #22c55e; } 
+        #tri-2 { grid-area: y; clip-path: polygon(100% 0, 100% 100%, 0 50%); background-color: #eab308; } 
+        #tri-3 { grid-area: b; clip-path: polygon(50% 0, 0 100%, 100% 100%); background-color: #3b82f6; } 
 
-        /* UI */
-        .footer-safe { padding-bottom: env(safe-area-inset-bottom, 20px); margin-bottom: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; gap: 10px; }
+        .footer-safe { padding-bottom: env(safe-area-inset-bottom, 20px); margin-bottom: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; gap: 4px; }
         .chat-area { width: 100%; padding: 0 15px; }
-        .dice-area { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; padding-bottom: 10px; }
-
-        .dice-box { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; transition: transform 0.1s; background: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); color: #334155; position: relative; opacity: 1 !important; }
-        .dice-rolling { animation: chaos-roll 0.2s linear infinite; }
-        @keyframes chaos-roll { 0% { transform: rotate3d(1,1,1,0deg); } 100% { transform: rotate3d(1,1,1,360deg); } }
+        .dice-area { display: flex; flex-direction: row; justify-content: center; align-items: center; width: 100%; padding-bottom: 10px; gap: 15px; }
         
-        .dice-red { color: #ef4444; border: 2px solid #fee2e2; } .dice-green { color: #22c55e; border: 2px solid #dcfce7; } .dice-yellow { color: #eab308; border: 2px solid #fef9c3; } .dice-blue { color: #3b82f6; border: 2px solid #dbeafe; }
-        .dice-active-glow { box-shadow: 0 0 25px rgba(59, 130, 246, 0.6); transform: scale(1.05); border: 3px solid white; }
-        .glow-red { box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); border-color: #ef4444; } .glow-green { box-shadow: 0 0 30px rgba(34, 197, 94, 0.8); border-color: #22c55e; } .glow-yellow { box-shadow: 0 0 30px rgba(234, 179, 8, 0.8); border-color: #eab308; } .glow-blue { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); border-color: #3b82f6; }
+        .dice-box { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; cursor: pointer; transition: transform 0.1s; background: white; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); position: relative; opacity: 1 !important; border: 2px solid #e2e8f0; }
+        .dice-rolling { animation: smooth-spin 0.4s linear infinite; pointer-events: none; }
+        @keyframes smooth-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        #floating-chat-container { position: absolute; bottom: 160px; left: 20px; width: 300px; max-width: 70%; z-index: 100; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
-        .chat-bubble-float { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border: 1px solid white; color: #334155; padding: 10px 16px; border-radius: 18px; border-bottom-left-radius: 4px; margin-top: 8px; font-size: 0.95rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px) scale(0.9); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.5s 5.5s forwards; pointer-events: auto; }
-        .chat-bubble-float strong { color: #64748b; text-transform: uppercase; font-size: 0.7rem; display: block; margin-bottom: 2px; }
+        .dice-red { color: #ef4444; border: 2px solid #fee2e2; } .dice-green { color: #22c55e; border: 2px solid #dcfce7; } 
+        .dice-yellow { color: #eab308; border: 2px solid #fef9c3; } .dice-blue { color: #3b82f6; border: 2px solid #dbeafe; }
+        .dice-disabled { opacity: 0.4; filter: grayscale(100%); pointer-events: none; cursor: not-allowed; }
+
+        .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); border-color: #ef4444; }
+        .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); border-color: #22c55e; }
+        .glow-yellow { box-shadow: 0 0 20px rgba(234, 179, 8, 0.4); border-color: #eab308; }
+        .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); border-color: #3b82f6; }
+
+        #floating-chat-container { position: absolute; bottom: 160px; left: 20px; width: 280px; max-width: 70%; z-index: 200; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
+        .chat-bubble-float { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border: 1px solid white; color: #334155; padding: 6px 12px; border-radius: 12px; border-bottom-left-radius: 2px; margin-top: 4px; font-size: 0.9rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px) scale(0.95); animation: popIn 0.2s forwards, fadeOut 0.5s 5.5s forwards; pointer-events: auto; display: flex; flex-direction: column; line-height: 1.1; }
+        .chat-name { font-size: 0.65rem; text-transform: uppercase; font-weight: 900; margin-bottom: 0px; }
         @keyframes popIn { to { opacity: 1; transform: translateY(0) scale(1); } } @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px) scale(0.95); } }
-
+        
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .hidden { display: none !important; }
         .btn-glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.5); transition: all 0.2s; }
@@ -192,36 +159,40 @@
                 <span id="turn-text" class="font-bold text-slate-700 text-sm">Initializing...</span>
             </div>
             <div class="flex items-center gap-2">
+                <div id="online-controls" class="flex gap-2">
+                    <button onclick="window.toggleMic()" id="btn-mic" class="btn-glass w-8 h-8 rounded-full flex items-center justify-center text-slate-500 text-xs"><i class="fas fa-microphone-slash"></i></button>
+                    <button onclick="window.toggleSpeaker()" id="btn-speaker" class="btn-glass w-8 h-8 rounded-full flex items-center justify-center text-slate-500 text-xs"><i class="fas fa-volume-up"></i></button>
+                </div>
                 <button onclick="window.toggleSFX()" id="btn-sfx" class="btn-glass w-8 h-8 rounded-full flex items-center justify-center text-slate-500 text-xs"><i class="fas fa-music"></i></button>
-                <button onclick="window.toggleSpeaker()" id="btn-speaker" class="btn-glass w-8 h-8 rounded-full flex items-center justify-center text-slate-500 text-xs"><i class="fas fa-volume-up"></i></button>
-                <button onclick="window.toggleMic()" id="btn-mic" class="btn-glass w-8 h-8 rounded-full flex items-center justify-center text-slate-500 text-xs"><i class="fas fa-microphone-slash"></i></button>
                 <button onclick="window.showGiveUp()" class="btn-glass w-8 h-8 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 text-xs"><i class="fas fa-sign-out-alt"></i></button>
             </div>
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center overflow-hidden w-full relative bg-slate-50/50">
             <div id="floating-chat-container"></div>
-            <div class="ludo-board relative" id="board">
-                <div id="base-0" class="base base-red" style="grid-row: 10/16; grid-column: 1/7;"><div class="base-label text-red-900/40" id="name-0">P1</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
-                <div id="base-1" class="base base-green" style="grid-row: 1/7; grid-column: 1/7;"><div class="base-label text-green-900/40" id="name-1">P2</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
-                <div id="base-2" class="base base-yellow" style="grid-row: 1/7; grid-column: 10/16;"><div class="base-label text-yellow-900/40" id="name-2">P3</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
-                <div id="base-3" class="base base-blue" style="grid-row: 10/16; grid-column: 10/16;"><div class="base-label text-blue-900/40" id="name-3">P4</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
-                <div class="center-box">
-                    <div class="tri-green"></div><div class="tri-yellow"></div><div class="tri-red"></div><div class="tri-blue"></div>
-                    <div id="center-trophy"><i class="fas fa-trophy"></i></div>
+            <div class="board-wrapper" id="board-container">
+                <div class="ludo-board" id="board">
+                    <div id="base-0" class="base base-red" style="grid-row: 10/16; grid-column: 1/7;"><div class="base-label" id="name-0">P1</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
+                    <div id="base-1" class="base base-green" style="grid-row: 1/7; grid-column: 1/7;"><div class="base-label" id="name-1">P2</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
+                    <div id="base-2" class="base base-yellow" style="grid-row: 1/7; grid-column: 10/16;"><div class="base-label" id="name-2">P3</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
+                    <div id="base-3" class="base base-blue" style="grid-row: 10/16; grid-column: 10/16;"><div class="base-label" id="name-3">P4</div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div></div>
+                    <div class="center-box">
+                        <div id="tri-0" class="tri tri-red"></div><div id="tri-1" class="tri tri-green"></div><div id="tri-2" class="tri tri-yellow"></div><div id="tri-3" class="tri tri-blue"></div>
+                        <div id="center-trophy"><i class="fas fa-trophy"></i></div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="footer-safe border-t border-slate-200 z-30 shadow-[0_-4px_6px_rgba(0,0,0,0.02)]">
-            <div class="chat-area flex gap-2 pt-2">
+            <div class="chat-area flex gap-2 pt-2" id="chat-input-area">
                 <input type="text" id="chat-input" class="flex-1 bg-slate-100 border-0 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all font-medium" placeholder="Chat here..." onkeypress="window.handleChatKey(event)">
                 <button onclick="window.sendChat()" class="bg-slate-800 text-white rounded-xl px-4 py-2 text-sm font-bold hover:bg-slate-700 transition-colors shadow-md shadow-slate-200">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
             <div class="dice-area">
-                <div id="dice-player-name" class="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-100 text-slate-400 mb-2 text-player-label">
+                <div id="dice-player-name" class="text-xs font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-slate-100 text-slate-400 text-player-label min-w-[80px] text-center">
                     Waiting...
                 </div>
                 <div id="dice-wrapper" class="rounded-2xl p-1 transition-all duration-300">
@@ -236,8 +207,7 @@
     <div id="give-up-modal" class="hidden modal">
         <div class="bg-white p-6 rounded-3xl shadow-2xl text-center max-w-xs mx-4 scale-100">
             <h3 class="text-xl font-black text-slate-800 mb-1">Leave Game?</h3>
-            <p class="text-slate-500 mb-6 text-sm font-medium">You will be removed from this match.</p>
-            <div class="flex gap-3"><button onclick="document.getElementById('give-up-modal').classList.add('hidden')" class="flex-1 py-3 border-2 border-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Cancel</button><button onclick="window.confirmGiveUp()" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-600">Leave</button></div>
+            <div class="flex gap-3 mt-4"><button onclick="document.getElementById('give-up-modal').classList.add('hidden')" class="flex-1 py-3 border-2 border-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Cancel</button><button onclick="window.confirmGiveUp()" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-600">Leave</button></div>
         </div>
     </div>
     <div id="victory-modal" class="hidden modal">
@@ -265,12 +235,13 @@ const firebaseConfig = {
     measurementId: "G-3FMMQYLJK0"
 };
 
-const COLORS = ['red', 'green', 'yellow', 'blue'];
+const LOGIC_COLORS = ['red', 'green', 'yellow', 'blue'];
 const SAFE_SPOTS = [9, 22, 35, 48];
-const START_INDICES = { red: 1, green: 14, yellow: 27, blue: 40 };
+const START_INDICES = { 0: 1, 1: 14, 2: 27, 3: 40 }; 
+
 const BASE_POSITIONS = {
-    red: [[11,2], [11,5], [14,2], [14,5]], green: [[2,2], [2,5], [5,2], [5,5]],
-    yellow: [[2,11], [2,14], [5,11], [5,14]], blue: [[11,11], [11,14], [14,11], [14,14]]
+    0: [[11,2], [11,5], [14,2], [14,5]], 1: [[2,2], [2,5], [5,2], [5,5]],
+    2: [[2,11], [2,14], [5,11], [5,14]], 3: [[11,11], [11,14], [14,11], [14,14]]
 };
 const MAIN_PATH = [
     [15,7],[14,7],[13,7],[12,7],[11,7],[10,7], [9,6],[9,5],[9,4],[9,3],[9,2],[9,1], [8,1],
@@ -279,10 +250,10 @@ const MAIN_PATH = [
     [9,15],[9,14],[9,13],[9,12],[9,11],[9,10], [10,9],[11,9],[12,9],[13,9],[14,9],[15,9], [15,8]
 ]; 
 const HOME_PATHS = {
-    red: [[14,8],[13,8],[12,8],[11,8],[10,8]], green: [[8,2],[8,3],[8,4],[8,5],[8,6]],
-    yellow: [[2,8],[3,8],[4,8],[5,8],[6,8]], blue: [[8,14],[8,13],[8,12],[8,11],[8,10]]
+    0: [[14,8],[13,8],[12,8],[11,8],[10,8]], 1: [[8,2],[8,3],[8,4],[8,5],[8,6]],
+    2: [[2,8],[3,8],[4,8],[5,8],[6,8]], 3: [[8,14],[8,13],[8,12],[8,11],[8,10]]
 };
-const WIN_POSITIONS = { red: [9,8], green: [8,7], yellow: [7,8], blue: [8,9] };
+const WIN_POSITIONS = { 0: [9,8], 1: [8,7], 2: [7,8], 3: [8,9] };
 const PAWN_SVG = `<svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg>`;
 
 const app = initializeApp(firebaseConfig);
@@ -294,17 +265,16 @@ let currentUser = { name: 'Player', password: '' };
 let sfxEnabled = true;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let lastProcessedRollId = 0; 
-let boardRotation = 0; // NEW: Track rotation
+let lastProcessedMoveId = 0; 
+let boardRotation = 0; 
+let myColorIndex = 0; 
+let seenChatIds = new Set(); 
+let botTimer = null; 
 
 let localStream = null;
 let peerConnections = {}; 
 let rtcSessionId = Math.random().toString(36).substring(7); 
-const rtcConfig = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' } 
-    ]
-};
+const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] };
 let isMicOn = false;
 let isSpeakerOn = true;
 
@@ -324,9 +294,7 @@ const playSound = (type) => {
 };
 
 function showScreen(screenId) {
-    ['auth-screen', 'main-menu', 'online-menu', 'lobby-waiting', 'game-ui', 'give-up-modal', 'victory-modal'].forEach(id => {
-        document.getElementById(id).classList.add('hidden');
-    });
+    ['auth-screen', 'main-menu', 'online-menu', 'lobby-waiting', 'game-ui', 'give-up-modal', 'victory-modal'].forEach(id => document.getElementById(id).classList.add('hidden'));
     document.getElementById(screenId).classList.remove('hidden');
     if(screenId === 'game-ui') document.getElementById('game-ui').classList.add('flex');
     else document.getElementById('game-ui').classList.remove('flex');
@@ -337,20 +305,11 @@ window.toggleSFX = () => { sfxEnabled = !sfxEnabled; document.querySelector('#bt
 async function initAuth() {
     try {
         const saved = localStorage.getItem('ludo_user');
-        if(saved) {
-            currentUser = JSON.parse(saved);
-            loginSuccess(currentUser.name, currentUser.password, true);
-        }
+        if(saved) { currentUser = JSON.parse(saved); loginSuccess(currentUser.name, currentUser.password, true); }
         await signInAnonymously(auth);
-
         const params = new URLSearchParams(window.location.search);
         const linkRoom = params.get('room');
-        if(linkRoom) {
-            document.getElementById('room-code-input').value = linkRoom;
-            if(saved) setTimeout(() => window.joinRoom(), 500);
-            return; 
-        }
-
+        if(linkRoom) { document.getElementById('room-code-input').value = linkRoom; if(saved) setTimeout(() => window.joinRoom(), 500); return; }
         const activeRoom = localStorage.getItem('ludo_current_room');
         if(activeRoom && saved) rejoinSession(activeRoom);
     } catch(e) { console.error("Auth Init:", e); }
@@ -358,18 +317,13 @@ async function initAuth() {
 
 async function rejoinSession(code) {
     if(!auth.currentUser) await signInAnonymously(auth);
-    myPlayerId = auth.currentUser.uid;
-    roomId = code;
+    myPlayerId = auth.currentUser.uid; roomId = code;
     const ref = doc(db, 'ludo_rooms', code);
     const d = await getDoc(ref);
     if(d.exists()) {
         const players = d.data().players;
-        if(players.some(p => p.id === myPlayerId && p.status !== 'left')) {
-            showToast("Rejoining Game...");
-            enterLobby(code);
-        } else {
-            localStorage.removeItem('ludo_current_room');
-        }
+        if(players.some(p => p.id === myPlayerId && p.status !== 'left')) { showToast("Rejoining Game..."); enterLobby(code); } 
+        else localStorage.removeItem('ludo_current_room');
     }
 }
 
@@ -387,27 +341,16 @@ window.attemptLogin = async () => {
     try {
         const ref = doc(db, 'ludo_users', u);
         const snap = await getDoc(ref);
-        if(snap.exists()) {
-            if(snap.data().password === p) loginSuccess(u, p); else showToast("Wrong Password");
-        } else {
-            await setDoc(ref, { password: p, created: serverTimestamp() });
-            loginSuccess(u, p);
-        }
+        if(snap.exists()) { if(snap.data().password === p) loginSuccess(u, p); else showToast("Wrong Password"); }
+        else { await setDoc(ref, { password: p, created: serverTimestamp() }); loginSuccess(u, p); }
     } catch(e) { showToast("Login Error: " + e.code); }
 };
 
-window.skipLogin = async () => {
-    currentUser = { name: 'Guest', password: '' };
-    showScreen('main-menu');
-    document.getElementById('display-username').innerText = "Guest";
-};
+window.skipLogin = async () => { currentUser = { name: 'Guest', password: '' }; showScreen('main-menu'); document.getElementById('display-username').innerText = "Guest"; };
 
 function loginSuccess(u, p, silent=false) {
-    currentUser = { name: u, password: p };
-    localStorage.setItem('ludo_user', JSON.stringify(currentUser));
-    showScreen('main-menu');
-    document.getElementById('display-username').innerText = u;
-    document.getElementById('online-player-name').innerText = u;
+    currentUser = { name: u, password: p }; localStorage.setItem('ludo_user', JSON.stringify(currentUser));
+    showScreen('main-menu'); document.getElementById('display-username').innerText = u; document.getElementById('online-player-name').innerText = u;
     if(!silent) showToast(`Welcome ${u}`);
 }
 window.logout = () => { localStorage.removeItem('ludo_user'); localStorage.removeItem('ludo_current_room'); window.location.reload(); };
@@ -417,276 +360,144 @@ function createBoard() {
     MAIN_PATH.forEach((pos, idx) => {
         const c = document.createElement('div');
         c.className = 'cell'; c.style.gridRow = pos[0]; c.style.gridColumn = pos[1];
-        if([1,14,27,40].includes(idx)) c.classList.add(`path-${COLORS[Math.floor(idx/13)]}`, 'start-point');
+        c.setAttribute('data-idx', idx); 
+        if([1,14,27,40].includes(idx)) c.classList.add(`path-${LOGIC_COLORS[Math.floor(idx/13)]}`, 'start-point');
         if(SAFE_SPOTS.includes(idx)) c.classList.add('safe-spot');
         boardEl.appendChild(c);
     });
-    Object.keys(HOME_PATHS).forEach(k => {
-        const coords = HOME_PATHS[k];
-        for(let i=0; i<coords.length; i++) {
+    for(let i=0; i<4; i++) {
+        const color = LOGIC_COLORS[i];
+        const coords = HOME_PATHS[i];
+        coords.forEach((coord, idx) => {
             const c = document.createElement('div');
-            c.className = `cell path-${k}`; c.style.gridRow = coords[i][0]; c.style.gridColumn = coords[i][1];
+            c.className = `cell path-${color}`; 
+            c.id = `home-${i}-${idx}`; 
+            c.style.gridRow = coord[0]; c.style.gridColumn = coord[1];
             boardEl.appendChild(c);
-        }
-    });
+        });
+    }
 }
 createBoard();
 
-// --- BOARD ORIENTATION (First Person & Correct Icon Rotation) ---
-function orientBoard() {
-    let myColor = 0; // Default Red
-    if (gameState.mode === 'online') {
-        const me = gameState.players.find(p => p && p.id === myPlayerId);
-        if (me) myColor = me.color;
-    }
-    
-    // Calculate rotation: Red=0, Green=270, Yellow=180, Blue=90
-    if (myColor === 0) boardRotation = 0;
-    else if (myColor === 1) boardRotation = 270; 
-    else if (myColor === 2) boardRotation = 180; 
-    else if (myColor === 3) boardRotation = 90; 
+function getVisualColorIndex(logicIndex) {
+    return (logicIndex - myColorIndex + 4) % 4;
+}
 
-    document.getElementById('board').style.transform = `rotate(${boardRotation}deg)`;
+function orientBoard() {
+    myColorIndex = 0; 
+    if (gameState.mode === 'online') { const me = gameState.players.find(p => p && p.id === myPlayerId); if (me) myColorIndex = me.color; }
     
-    // Counter-rotate static text
+    const rotations = [0, 270, 180, 90];
+    boardRotation = rotations[myColorIndex]; 
+
+    document.getElementById('board-container').style.transform = `rotate(${boardRotation}deg)`;
     document.querySelectorAll('.base-label').forEach(el => el.style.transform = `translate(-50%, -50%) rotate(${-boardRotation}deg)`);
-    
-    // Counter-rotate the new Center Trophy Element
     const centerTrophy = document.getElementById('center-trophy');
     if(centerTrophy) centerTrophy.style.transform = `translate(-50%, -50%) rotate(${-boardRotation}deg)`;
-}
 
-// --- WEBRTC LOGIC ---
-async function cleanOldSignals() {
-    const q = query(collection(db, 'ludo_rooms', roomId, 'signals'), where('to', '==', myPlayerId));
-    const snapshot = await getDocs(q);
-    snapshot.forEach(doc => deleteDoc(doc.ref));
-}
-
-function cleanupRTC() {
-    if(signalUnsubscribe) signalUnsubscribe();
-    if(localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-        localStream = null;
+    for(let i=0; i<4; i++) {
+        const vIdx = getVisualColorIndex(i);
+        const color = LOGIC_COLORS[vIdx];
+        document.getElementById(`base-${i}`).className = `base base-${color}`; 
+        document.getElementById(`tri-${i}`).className = `tri tri-${color}`;
+        for(let j=0; j<5; j++) {
+             const cell = document.getElementById(`home-${i}-${j}`);
+             if(cell) cell.className = `cell path-${color}`;
+        }
     }
-    Object.values(peerConnections).forEach(pc => pc.close());
-    peerConnections = {};
-    const container = document.getElementById('remote-audio-container');
-    if(container) container.innerHTML = '';
-}
-
-function initWebRTC() {
-    rtcSessionId = Math.random().toString(36).substring(7);
-    cleanOldSignals();
-    
-    const q = query(collection(db, 'ludo_rooms', roomId, 'signals'), where('to', '==', myPlayerId));
-    signalUnsubscribe = onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach(async (change) => {
-            if (change.type === "added") {
-                const data = change.doc.data();
-                await handleSignal(data);
-                deleteDoc(change.doc.ref);
-            }
-        });
+    document.querySelectorAll('.start-point').forEach(el => {
+         const idx = parseInt(el.getAttribute('data-idx'));
+         const logicOwner = Math.floor(idx/13);
+         const vIdx = getVisualColorIndex(logicOwner);
+         el.className = `cell start-point path-${LOGIC_COLORS[vIdx]}`;
     });
 }
 
-async function handleSignal(data) {
-    const { from, type, signal, targetSessionId } = data;
-    if(targetSessionId && targetSessionId !== rtcSessionId) return;
+// --- WEBRTC ---
+async function cleanOldSignals() { const q = query(collection(db, 'ludo_rooms', roomId, 'signals'), where('to', '==', myPlayerId)); const snapshot = await getDocs(q); snapshot.forEach(doc => deleteDoc(doc.ref)); }
+function cleanupRTC() { if(signalUnsubscribe) signalUnsubscribe(); if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } Object.values(peerConnections).forEach(pc => pc.close()); peerConnections = {}; const container = document.getElementById('remote-audio-container'); if(container) container.innerHTML = ''; }
+function initWebRTC() { rtcSessionId = Math.random().toString(36).substring(7); cleanOldSignals(); const q = query(collection(db, 'ludo_rooms', roomId, 'signals'), where('to', '==', myPlayerId)); signalUnsubscribe = onSnapshot(q, (snapshot) => { snapshot.docChanges().forEach(async (change) => { if (change.type === "added") { const data = change.doc.data(); await handleSignal(data); deleteDoc(change.doc.ref); } }); }); }
+async function handleSignal(data) { const { from, type, signal, targetSessionId } = data; if(targetSessionId && targetSessionId !== rtcSessionId) return; if (!peerConnections[from]) createPeerConnection(from); const pc = peerConnections[from]; try { if (type === 'offer') { if (pc.signalingState !== "stable") return; await pc.setRemoteDescription(new RTCSessionDescription(signal)); if (!localStream) pc.addTransceiver('audio', { direction: 'recvonly' }); const answer = await pc.createAnswer(); await pc.setLocalDescription(answer); await sendSignal(from, 'answer', answer); while(pc.candidateQueue && pc.candidateQueue.length > 0) await pc.addIceCandidate(pc.candidateQueue.shift()); } else if (type === 'answer') { if (pc.signalingState !== "have-local-offer") return; await pc.setRemoteDescription(new RTCSessionDescription(signal)); while(pc.candidateQueue && pc.candidateQueue.length > 0) await pc.addIceCandidate(pc.candidateQueue.shift()); } else if (type === 'candidate') { if (pc.remoteDescription) await pc.addIceCandidate(new RTCIceCandidate(signal)); else { if(!pc.candidateQueue) pc.candidateQueue = []; pc.candidateQueue.push(new RTCIceCandidate(signal)); } } } catch(e) { console.error("WebRTC Error:", e); } }
+function createPeerConnection(targetId) { if(peerConnections[targetId]) peerConnections[targetId].close(); const pc = new RTCPeerConnection(rtcConfig); peerConnections[targetId] = pc; pc.candidateQueue = []; if(localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream)); else pc.addTransceiver('audio', { direction: 'recvonly' }); pc.onicecandidate = (event) => { if (event.candidate) sendSignal(targetId, 'candidate', event.candidate); }; pc.ontrack = (event) => { let remoteAudio = document.getElementById(`audio-${targetId}`); if (!remoteAudio) { remoteAudio = document.createElement('audio'); remoteAudio.id = `audio-${targetId}`; remoteAudio.autoplay = true; document.getElementById('remote-audio-container').appendChild(remoteAudio); } remoteAudio.srcObject = event.streams[0]; remoteAudio.muted = !isSpeakerOn; remoteAudio.play().catch(e => console.log("Audio play blocked")); }; return pc; }
+async function sendSignal(toId, type, signal) { const col = collection(db, 'ludo_rooms', roomId, 'signals'); await addDoc(col, { to: toId, from: myPlayerId, type: type, signal: JSON.parse(JSON.stringify(signal)), targetSessionId: null, timestamp: serverTimestamp() }); }
+async function connectToPeers() { const others = gameState.players.filter(p => p && p.id !== myPlayerId && p.status === 'active'); for (const p of others) { const pc = createPeerConnection(p.id); const offer = await pc.createOffer(); await pc.setLocalDescription(offer); await sendSignal(p.id, 'offer', offer); } }
+window.toggleMic = async () => { const btn = document.getElementById('btn-mic'); const icon = btn.querySelector('i'); if(!isMicOn) { cleanupRTC(); initWebRTC(); try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); isMicOn = true; icon.className = 'fas fa-microphone text-green-500'; showToast("Mic On"); await connectToPeers(); } catch(e) { showToast("Mic Error"); } } else { cleanupRTC(); initWebRTC(); isMicOn = false; icon.className = 'fas fa-microphone-slash text-slate-500'; showToast("Mic Off"); await connectToPeers(); } };
+window.toggleSpeaker = () => { const btn = document.getElementById('btn-speaker'); const icon = btn.querySelector('i'); isSpeakerOn = !isSpeakerOn; if(!isSpeakerOn) { icon.className = 'fas fa-volume-mute text-red-400'; showToast("Audio Muted"); } else { icon.className = 'fas fa-volume-up text-slate-500'; showToast("Audio On"); } document.querySelectorAll('audio').forEach(el => el.muted = !isSpeakerOn); };
 
-    if (!peerConnections[from]) {
-        createPeerConnection(from);
-    }
-    const pc = peerConnections[from];
-
-    try {
-        if (type === 'offer') {
-            if (pc.signalingState !== "stable") return;
-            await pc.setRemoteDescription(new RTCSessionDescription(signal));
-            if (!localStream) {
-                pc.addTransceiver('audio', { direction: 'recvonly' });
-            }
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            await sendSignal(from, 'answer', answer);
-            while(pc.candidateQueue && pc.candidateQueue.length > 0) {
-                const c = pc.candidateQueue.shift();
-                await pc.addIceCandidate(c);
-            }
-        } else if (type === 'answer') {
-            if (pc.signalingState !== "have-local-offer") return;
-            await pc.setRemoteDescription(new RTCSessionDescription(signal));
-            while(pc.candidateQueue && pc.candidateQueue.length > 0) {
-                const c = pc.candidateQueue.shift();
-                await pc.addIceCandidate(c);
-            }
-        } else if (type === 'candidate') {
-            if (pc.remoteDescription) {
-                await pc.addIceCandidate(new RTCIceCandidate(signal));
-            } else {
-                if(!pc.candidateQueue) pc.candidateQueue = [];
-                pc.candidateQueue.push(new RTCIceCandidate(signal));
-            }
-        }
-    } catch(e) { console.error("WebRTC Error:", e); }
-}
-
-function createPeerConnection(targetId) {
-    if(peerConnections[targetId]) peerConnections[targetId].close();
-    const pc = new RTCPeerConnection(rtcConfig);
-    peerConnections[targetId] = pc;
-    pc.candidateQueue = [];
-
-    if(localStream) {
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    } else {
-        pc.addTransceiver('audio', { direction: 'recvonly' });
-    }
-
-    pc.onicecandidate = (event) => {
-        if (event.candidate) {
-            sendSignal(targetId, 'candidate', event.candidate);
-        }
-    };
-
-    pc.ontrack = (event) => {
-        let remoteAudio = document.getElementById(`audio-${targetId}`);
-        if (!remoteAudio) {
-            remoteAudio = document.createElement('audio');
-            remoteAudio.id = `audio-${targetId}`;
-            remoteAudio.autoplay = true;
-            document.getElementById('remote-audio-container').appendChild(remoteAudio);
-        }
-        remoteAudio.srcObject = event.streams[0];
-        remoteAudio.muted = !isSpeakerOn;
-        remoteAudio.play().catch(e => console.log("Audio play blocked"));
-    };
-    return pc;
-}
-
-async function sendSignal(toId, type, signal) {
-    const col = collection(db, 'ludo_rooms', roomId, 'signals');
-    await addDoc(col, {
-        to: toId, from: myPlayerId, type: type, signal: JSON.parse(JSON.stringify(signal)), targetSessionId: null, timestamp: serverTimestamp()
-    });
-}
-
-async function connectToPeers() {
-    const others = gameState.players.filter(p => p && p.id !== myPlayerId && p.status === 'active');
-    for (const p of others) {
-        const pc = createPeerConnection(p.id);
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        await sendSignal(p.id, 'offer', offer);
-    }
-}
-
-window.toggleMic = async () => {
-    const btn = document.getElementById('btn-mic');
-    const icon = btn.querySelector('i');
-    if(!isMicOn) {
-        cleanupRTC();
-        initWebRTC();
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            isMicOn = true;
-            icon.className = 'fas fa-microphone text-green-500';
-            showToast("Mic On");
-            await connectToPeers();
-        } catch(e) { showToast("Mic Error"); }
-    } else {
-        cleanupRTC();
-        initWebRTC();
-        isMicOn = false;
-        icon.className = 'fas fa-microphone-slash text-slate-500';
-        showToast("Mic Off");
-        await connectToPeers(); 
-    }
-};
-
-window.toggleSpeaker = () => {
-    const btn = document.getElementById('btn-speaker');
-    const icon = btn.querySelector('i');
-    isSpeakerOn = !isSpeakerOn;
-    if(!isSpeakerOn) {
-        icon.className = 'fas fa-volume-mute text-red-400';
-        showToast("Audio Muted");
-    } else {
-        icon.className = 'fas fa-volume-up text-slate-500';
-        showToast("Audio On");
-    }
-    document.querySelectorAll('audio').forEach(el => el.muted = !isSpeakerOn);
-};
-
-// --- MULTIPLAYER LOGIC ---
+// --- CORE GAME & SYNC LOGIC ---
 function enterLobby(code) {
-    showScreen('lobby-waiting');
-    document.getElementById('display-room-code').innerText = code;
-    localStorage.setItem('ludo_current_room', code);
-
+    showScreen('lobby-waiting'); document.getElementById('display-room-code').innerText = code; localStorage.setItem('ludo_current_room', code);
     roomUnsubscribe = onSnapshot(doc(db, 'ludo_rooms', code), sn => {
-        const d = sn.data();
-        if(!d) return;
-        if(d.chat && d.chat.length > gameState.chatCount) handleChatUpdates(d.chat);
+        const d = sn.data(); if(!d) return;
+        if(d.chat) handleChatUpdates(d.chat);
         if(d.status === 'LOBBY') {
-            const list = document.getElementById('lobby-players');
-            const activeP = d.players.filter(p => p.status !== 'left');
-            list.innerHTML = activeP.map(p => `<div class="p-3 bg-white rounded-xl shadow-sm text-sm border-l-4 border-${COLORS[p.color]}-500 font-bold flex justify-between"><span>${p.name}</span> <span class="text-xs text-slate-400 self-center">${COLORS[p.color].toUpperCase()}</span></div>`).join('');
+            const list = document.getElementById('lobby-players'); const activeP = d.players.filter(p => p.status !== 'left');
+            list.innerHTML = activeP.map(p => `<div class="p-3 bg-white rounded-xl shadow-sm text-sm border-l-4 border-${LOGIC_COLORS[getVisualColorIndex(p.color)]}-500 font-bold flex justify-between"><span>${p.name}</span> <span class="text-xs text-slate-400 self-center">${LOGIC_COLORS[p.color].toUpperCase()}</span></div>`).join('');
             if(d.host === myPlayerId && activeP.length > 1) document.getElementById('start-online-btn').classList.remove('hidden');
-        } else if(d.status === 'PLAYING') {
-            if(gameState.mode !== 'online') startOnline(d); else syncState(d);
-        }
+        } else if(d.status === 'PLAYING') { if(gameState.mode !== 'online') startOnline(d); else syncState(d); }
     });
     initWebRTC();
 }
 
 function startOnline(d) {
-    gameState.mode = 'online'; 
-    gameState.players = [null, null, null, null];
-    d.players.forEach(p => {
-        if(p.color >= 0 && p.color < 4) gameState.players[p.color] = p;
-    });
-    showScreen('game-ui');
-    syncState(d);
-    orientBoard(); 
-    connectToPeers();
+    gameState.mode = 'online'; gameState.players = [null, null, null, null];
+    d.players.forEach(p => { if(p.color >= 0 && p.color < 4) gameState.players[p.color] = p; });
+    showScreen('game-ui'); orientBoard(); syncState(d); connectToPeers();
 }
 
-function syncState(d) {
-    gameState.turn = d.turn; 
+async function syncState(d) {
+    if (gameState.chatCount === 0 && d.chat) gameState.chatCount = d.chat.length;
     
+    // Dice Animation Sync
     if (d.lastRollId && d.lastRollId > lastProcessedRollId) {
         lastProcessedRollId = d.lastRollId;
+        gameState.turn = d.turn; 
         animateDiceAndFinish(d.diceValue);
     } 
-    else if (d.diceValue === 0 || d.waitingForMove) {
+    // Move Animation Sync
+    else if (d.animatingMove && d.animatingMove.id > lastProcessedMoveId) {
+        lastProcessedMoveId = d.animatingMove.id;
+        await runHopAnimation(d.animatingMove.pIdx, d.animatingMove.tIdx, d.animatingMove.steps);
+        
+        // --- CRITICAL MULTIPLAYER FIX ---
+        // If I am the active player, I finalize the move locally and push the new state
+        if (isCurrentPlayerTurn()) {
+            finalizeMove(d.animatingMove.pIdx, d.animatingMove.tIdx);
+        }
+    }
+    // Final State Sync (Catch up)
+    else if (!d.animatingMove && (d.waitingForMove !== gameState.waitingForMove || JSON.stringify(JSON.parse(d.pieces)) !== JSON.stringify(gameState.pieces) || d.turn !== gameState.turn)) {
+        gameState.turn = d.turn;
         gameState.diceValue = d.diceValue;
         gameState.waitingForMove = d.waitingForMove;
         gameState.pieces = JSON.parse(d.pieces);
+        gameState.isProcessing = false; // FORCE UNLOCK LOCAL STATE
         renderPieces();
     }
-
-    d.players.forEach(p => {
-        if(gameState.players[p.color]) gameState.players[p.color].status = p.status;
-    });
-    updateUI(); 
-    checkActivePlayers();
+    d.players.forEach(p => { if(gameState.players[p.color]) gameState.players[p.color].status = p.status; });
+    updateUI(); checkActivePlayers();
 }
 
 function handleChatUpdates(messages) {
-    const newCount = messages.length;
-    if (newCount > gameState.chatCount) {
-        messages.slice(gameState.chatCount).forEach(msg => spawnFloatingBubble(msg));
-        gameState.chatCount = newCount;
-    }
+    messages.forEach(msg => {
+        if (!seenChatIds.has(msg.id)) {
+            spawnFloatingBubble(msg);
+            seenChatIds.add(msg.id);
+        }
+    });
+    gameState.chatCount = messages.length;
 }
 
 function spawnFloatingBubble(msg) {
     const container = document.getElementById('floating-chat-container');
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble-float';
-    bubble.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
+    const cIdx = (msg.color >= 0) ? msg.color : 0;
+    const vIdx = getVisualColorIndex(cIdx);
+    const colorName = LOGIC_COLORS[vIdx];
+    
+    bubble.style.borderLeft = `4px solid ${colorName === 'yellow' ? '#eab308' : colorName}`; 
+    bubble.innerHTML = `<div class="chat-name">${msg.name}</div><div class="leading-tight">${msg.text}</div>`;
     container.appendChild(bubble);
     setTimeout(() => bubble.remove(), 7000);
 }
@@ -699,8 +510,7 @@ window.createRoom = async () => {
         myPlayerId = auth.currentUser.uid; roomId = code;
         const initialPieces = JSON.stringify(Array(4).fill(0).map(() => Array(4).fill(0).map(() => ({s:'BASE', p:0}))));
         await setDoc(doc(db, 'ludo_rooms', code), {
-            status: 'LOBBY', host: myPlayerId, chat: [], 
-            players: [{id:myPlayerId, name: name, color:0, type:'remote', status:'active'}], 
+            status: 'LOBBY', host: myPlayerId, chat: [], players: [{id:myPlayerId, name: name, color:0, type:'remote', status:'active'}], 
             pieces: initialPieces, turn: 0, diceValue: 0, waitingForMove: false, lastUpdated: serverTimestamp(), lastRollId: 0
         });
         enterLobby(code);
@@ -709,100 +519,118 @@ window.createRoom = async () => {
 
 window.joinRoom = async () => {
     if(!auth.currentUser) await signInAnonymously(auth);
-    const code = document.getElementById('room-code-input').value.toUpperCase();
+    let code = document.getElementById('room-code-input').value;
+    if(!code) return showToast("Enter Code");
+    code = code.trim().toUpperCase();
+
     const name = currentUser.name || 'Guest';
     try {
         const ref = doc(db, 'ludo_rooms', code);
         const d = await getDoc(ref);
         if(!d.exists()) return showToast("Room not found");
         const players = d.data().players;
-        const activePlayers = players.filter(p => p.status !== 'left');
-        if(activePlayers.length >= 4) return showToast("Room Full");
+        if(players.filter(p => p.status !== 'left').length >= 4) return showToast("Room Full");
         
         myPlayerId = auth.currentUser.uid; roomId = code;
+        
+        // CHECK IF JOINING NEW OR REJOINING
         if(!players.some(p => p.id === myPlayerId)) {
             const takenColors = players.filter(p => p.status!=='left').map(p => p.color);
-            let newColor = 0;
-            if(activePlayers.length === 1) {
-                const hostColor = activePlayers[0].color;
-                newColor = (hostColor + 2) % 4;
+            let newColor = 0; 
+            
+            // OPPOSITE SEATING FIX
+            if (players.length === 1) {
+                newColor = 2; // Yellow for P2
             } else {
-                while(takenColors.includes(newColor)) newColor++;
+                while(takenColors.includes(newColor) && newColor < 4) newColor++;
             }
+            
             await updateDoc(ref, { players: [...players, {id:myPlayerId, name: name, color:newColor, type:'remote', status:'active'}] });
         }
         enterLobby(code);
-    } catch(e) { showToast("Join Failed"); console.error(e); }
+    } catch(e) { showToast("Join Failed: " + e.message); console.error(e); }
 };
 
 window.startOnlineGame = () => updateDoc(doc(db, 'ludo_rooms', roomId), { status: 'PLAYING' });
 
-function pushGameState() {
-    updateDoc(doc(db, 'ludo_rooms', roomId), {
-        turn: gameState.turn, diceValue: gameState.diceValue, waitingForMove: gameState.waitingForMove, pieces: JSON.stringify(gameState.pieces), lastUpdated: serverTimestamp()
-    });
+function pushGameState(animData = null) {
+    const updateData = {
+        turn: gameState.turn, 
+        diceValue: gameState.diceValue, 
+        waitingForMove: gameState.waitingForMove, 
+        pieces: JSON.stringify(gameState.pieces), 
+        lastUpdated: serverTimestamp()
+    };
+    // Force clear animation flag on turn end
+    if (animData !== undefined) updateData.animatingMove = animData;
+    
+    updateDoc(doc(db, 'ludo_rooms', roomId), updateData);
 }
 
 window.startGame = (mode) => {
-    gameState = {
-        mode, turn: 0, diceValue: 0, waitingForMove: false, isProcessing: false, winners: [], chatCount: 0,
+    gameState = { mode, turn: 0, diceValue: 0, waitingForMove: false, isProcessing: false, winners: [], chatCount: 0,
         pieces: Array(4).fill(0).map(() => Array(4).fill(0).map(() => ({s:'BASE', p:0}))),
-        players: mode === 'local' 
-            ? [{id:'p1',name:currentUser.name||'You',color:0,type:'human', status:'active'}, null, {id:'bot',name:'CPU',color:2,type:'bot', status:'active'}, null] 
-            : []
+        players: mode === 'local' ? [{id:'p1',name:currentUser.name||'You',color:0,type:'human', status:'active'}, null, {id:'bot',name:'CPU',color:2,type:'bot', status:'active'}, null] : []
     };
-    showScreen('game-ui');
-    orientBoard();
-    updateUI();
-    setTimeout(renderPieces, 50);
+    showScreen('game-ui'); orientBoard(); updateUI(); setTimeout(renderPieces, 50);
 };
 
 function updateUI() {
+    if (gameState.isProcessing) return;
+
     const p = gameState.players[gameState.turn];
-    const color = COLORS[gameState.turn];
+    const visualIdx = getVisualColorIndex(gameState.turn);
+    const color = LOGIC_COLORS[visualIdx];
     const diceWrapper = document.getElementById('dice-wrapper');
     const nameLabel = document.getElementById('dice-player-name');
 
+    // Hide Online Controls in Local Mode
+    const onlineControls = document.getElementById('online-controls');
+    if(gameState.mode === 'local') {
+        if(onlineControls) onlineControls.style.display = 'none';
+        document.getElementById('chat-input-area').style.display = 'none';
+    } else {
+        if(onlineControls) onlineControls.style.display = 'flex';
+        document.getElementById('chat-input-area').style.display = 'flex';
+    }
+
     if(p && p.status === 'active') {
         document.getElementById('turn-text').innerText = `${p.name}'s Turn`;
-        document.getElementById('turn-text').style.color = color === 'yellow' ? '#d97706' : '#334155';
-        document.getElementById('current-turn-indicator').className = `w-3 h-3 rounded-full bg-${color === 'yellow' ? 'yellow-500' : color + '-500'}`;
-        diceWrapper.className = `rounded-2xl p-1 transition-all duration-300 dice-active-glow glow-${color}`;
+        const colors = ['bg-red-500', 'bg-green-500', 'bg-yellow-500', 'bg-blue-500'];
+        document.getElementById('current-turn-indicator').className = `w-3 h-3 rounded-full ${colors[visualIdx]}`;
         
+        diceWrapper.className = `rounded-2xl p-1 transition-all duration-300 dice-active-glow glow-${color}`;
         nameLabel.innerText = p.name;
-        nameLabel.className = `text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-2 text-player-label bg-${color}-100 text-${color}-600`;
-        // Fix for yellow text
-        if(color==='yellow') nameLabel.className = `text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-2 text-player-label bg-yellow-100 text-yellow-600`;
+        
+        nameLabel.className = `text-xs font-black uppercase tracking-widest px-3 py-2 rounded-xl mb-0 text-player-label bg-${color}-100 text-${color}-600`;
+        
+        // LOCK DICE VISUALLY
+        if (gameState.mode === 'online' && !isCurrentPlayerTurn()) diceWrapper.classList.add('dice-disabled');
+        else diceWrapper.classList.remove('dice-disabled');
 
     } else {
         document.getElementById('turn-text').innerText = `Waiting...`;
-        diceWrapper.className = `rounded-2xl p-1 transition-all duration-300`; 
+        diceWrapper.className = `rounded-2xl p-1 transition-all duration-300 dice-disabled`; 
         nameLabel.innerText = "Waiting...";
-        nameLabel.className = `text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-2 text-player-label bg-slate-100 text-slate-400`;
+        nameLabel.className = `text-xs font-black uppercase tracking-widest px-3 py-2 rounded-xl mb-0 text-player-label bg-slate-100 text-slate-400`;
     }
 
     const diceBox = document.getElementById('dice-visual');
-    if(gameState.diceValue === 0) diceBox.innerHTML = '<i class="fas fa-dice-six"></i>';
-    else diceBox.innerHTML = `<i class="fas fa-dice-${['one','two','three','four','five','six'][gameState.diceValue-1]}"></i>`;
-    diceBox.className = `dice-box dice-${color}`;
+    if (!diceBox.classList.contains('dice-rolling')) {
+        if(gameState.diceValue === 0) diceBox.innerHTML = '<i class="fas fa-dice-six"></i>';
+        else diceBox.innerHTML = `<i class="fas fa-dice-${['one','two','three','four','five','six'][gameState.diceValue-1]}"></i>`;
+    }
+    diceBox.className = `dice-box dice-${color}`; 
+    if(diceBox.classList.contains('dice-rolling')) diceBox.classList.add('dice-rolling');
     
     [0,1,2,3].forEach(i => {
-        const lbl = document.getElementById(`name-${i}`);
-        const base = document.getElementById(`base-${i}`);
-        const player = gameState.players[i];
+        const lbl = document.getElementById(`name-${i}`); const base = document.getElementById(`base-${i}`); const player = gameState.players[i];
+        base.classList.remove('base-inactive');
         if(player) {
-            lbl.innerText = player.name.substring(0,8); 
-            lbl.style.display = 'block';
-            if(player.status === 'left') {
-                base.classList.add('left-game');
-                lbl.innerText += " (Left)";
-                lbl.style.opacity = 0.5;
-            } else {
-                base.classList.remove('left-game');
-                lbl.style.opacity = 1;
-            }
-        } else {
-            lbl.style.display = 'none';
+            lbl.innerText = player.name.substring(0,8); lbl.style.display = 'block';
+            if(player.status === 'left') { base.classList.add('left-game'); lbl.innerText += " (Left)"; lbl.style.opacity = 0.5; } 
+        } else { 
+            lbl.style.display = 'none'; base.classList.add('base-inactive'); 
         }
     });
 }
@@ -813,150 +641,143 @@ function renderPieces() {
         if(!gameState.players[pIdx] || gameState.players[pIdx].status === 'left') return;
         pArr.forEach((piece, tIdx) => {
             let r, c;
-            if(piece.s === 'WIN') [r,c] = WIN_POSITIONS[COLORS[pIdx]];
-            else if(piece.s === 'BASE') [r,c] = BASE_POSITIONS[COLORS[pIdx]][tIdx];
-            else if(piece.s === 'PATH') {
-                const startIdx = START_INDICES[COLORS[pIdx]];
-                const globalIdx = (startIdx + piece.p) % 52;
-                [r,c] = MAIN_PATH[globalIdx];
-            } else if(piece.s === 'HOME') {
-                [r,c] = HOME_PATHS[COLORS[pIdx]][piece.p];
-            }
-            const key = `${r},${c}`;
-            if(!cellGroups[key]) cellGroups[key] = [];
-            cellGroups[key].push({ pIdx, tIdx, piece });
+            if(piece.s === 'WIN') [r,c] = WIN_POSITIONS[pIdx];
+            else if(piece.s === 'BASE') [r,c] = BASE_POSITIONS[pIdx][tIdx];
+            else if(piece.s === 'PATH') { 
+                const startIdx = START_INDICES[pIdx]; 
+                const globalIdx = (startIdx + piece.p) % 52; 
+                [r,c] = MAIN_PATH[globalIdx]; 
+            } 
+            else if(piece.s === 'HOME') { [r,c] = HOME_PATHS[pIdx][piece.p]; }
+            const key = `${r},${c}`; if(!cellGroups[key]) cellGroups[key] = []; cellGroups[key].push({ pIdx, tIdx, piece });
         });
     });
 
-    document.querySelectorAll('.highlight-cell-bg').forEach(el => el.classList.remove('highlight-cell-bg'));
+    document.querySelectorAll('.highlight-move').forEach(el => el.classList.remove('highlight-move', 'moveable'));
 
     Object.keys(cellGroups).forEach(key => {
-        const group = cellGroups[key];
-        const count = group.length;
-        const [r, c] = key.split(',').map(Number);
-
+        const group = cellGroups[key]; const count = group.length; const [r, c] = key.split(',').map(Number);
         group.forEach((item, index) => {
-            const { pIdx, tIdx, piece } = item;
-            const id = `token-${pIdx}-${tIdx}`;
-            
+            const { pIdx, tIdx, piece } = item; const id = `token-${pIdx}-${tIdx}`;
             let el = document.getElementById(id);
-            if(!el) {
+            const vIdx = getVisualColorIndex(pIdx);
+            
+            if(!el) { 
                 el = document.createElement('div'); el.id = id; 
-                el.className = `token token-${COLORS[pIdx]}`; 
-                el.innerHTML = PAWN_SVG;
-                el.onclick = (e) => { e.stopPropagation(); if(isCurrentPlayerTurn()) handleTokenClick(pIdx, tIdx); };
-                boardEl.appendChild(el);
+                el.className = `token token-${LOGIC_COLORS[vIdx]}`; 
+                el.innerHTML = PAWN_SVG; 
+                boardEl.appendChild(el); 
             }
+            else { el.className = `token token-${LOGIC_COLORS[vIdx]}`; } 
 
-            el.style.gridRow = r; el.style.gridColumn = c;
-            el.classList.remove('highlight-move', 'moveable');
+            el.onclick = (e) => { 
+                e.stopPropagation(); 
+                if(isCurrentPlayerTurn()) {
+                    handleTokenClick(pIdx, tIdx); 
+                }
+            };
 
+            el.style.gridRow = r; el.style.gridColumn = c; 
             let scale = 1, transX = 0, transY = 0;
-            if (piece.s !== 'BASE' && count > 1) {
-                scale = 0.6;
-                if (index === 0) { transX = -25; transY = -25; }
-                else if (index === 1) { transX = 25; transY = -25; }
-                else if (index === 2) { transX = -25; transY = 25; }
-                else { transX = 25; transY = 25; }
-            }
-            // Fix Rotation here: Counter-rotate the token
+            if (piece.s !== 'BASE' && count > 1) { scale = 0.6; if (index === 0) { transX = -25; transY = -25; } else if (index === 1) { transX = 25; transY = -25; } else if (index === 2) { transX = -25; transY = 25; } else { transX = 25; transY = 25; } }
+            // Counter-rotate the token so it stays upright
             el.style.transform = `translate(${transX}%, ${transY}%) scale(${scale}) rotate(${-boardRotation}deg)`;
-
-            // HIGHLIGHT LOGIC
-            if(gameState.waitingForMove && !gameState.isProcessing && isCurrentPlayerTurn() && canMove(pIdx, tIdx, gameState.diceValue)) {
-                el.classList.add('highlight-move', 'moveable');
+            
+            if(gameState.waitingForMove && !gameState.isProcessing && pIdx === gameState.turn && canMove(pIdx, tIdx, gameState.diceValue)) { 
+                el.classList.add('highlight-move'); 
+                if(isCurrentPlayerTurn()) el.classList.add('moveable'); 
             }
         });
     });
 }
 
 function attemptRoll() {
-    if(!isCurrentPlayerTurn() || gameState.isProcessing || gameState.waitingForMove) return;
-    performRoll(true);
+    const player = gameState.players[gameState.turn];
+    if (!player) return;
+    
+    // Strict multiplayer check
+    if (gameState.mode === 'online' && !isCurrentPlayerTurn()) return;
+    // Strict local human check
+    if (gameState.mode === 'local' && player.type === 'human' && !isCurrentPlayerTurn()) return;
+    
+    if (gameState.isProcessing || gameState.waitingForMove) return;
+    
+    performRoll();
 }
 
-function performRoll(isHuman) {
+function performRoll() {
     if (gameState.isProcessing) return;
     gameState.isProcessing = true;
-    
-    const result = Math.floor(Math.random() * 6) + 1;
-    const rollId = Date.now(); 
+    setTimeout(() => { if(gameState.isProcessing && gameState.diceValue === 0) gameState.isProcessing = false; }, 3000);
 
+    const result = Math.floor(Math.random() * 6) + 1;
     if(gameState.mode === 'online') {
-        updateDoc(doc(db, 'ludo_rooms', roomId), { 
-            diceValue: result, lastRollId: rollId, waitingForMove: false 
-        });
+        const rollId = Date.now();
+        updateDoc(doc(db, 'ludo_rooms', roomId), { diceValue: result, lastRollId: rollId, waitingForMove: false });
     } else {
         animateDiceAndFinish(result);
     }
 }
 
 function animateDiceAndFinish(finalValue) {
-    const dice = document.getElementById('dice-visual');
+    const dice = document.getElementById('dice-visual'); 
     dice.classList.add('dice-rolling');
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    playSound('roll');
+    if (audioCtx.state === 'suspended') audioCtx.resume(); playSound('roll');
     
     const faces = ['one','two','three','four','five','six'];
     const interval = setInterval(() => { 
         dice.innerHTML = `<i class="fas fa-dice-${faces[Math.floor(Math.random()*6)]}"></i>`; 
-        dice.style.transform = `rotate(${Math.random()*360}deg)`;
-    }, 50);
+    }, 80); 
 
     setTimeout(() => {
-        clearInterval(interval);
-        dice.style.transform = ''; 
-        dice.classList.remove('dice-rolling');
+        clearInterval(interval); 
+        dice.classList.remove('dice-rolling'); 
         dice.innerHTML = `<i class="fas fa-dice-${faces[finalValue-1]}"></i>`;
-        
-        setTimeout(() => {
-            handleRollResult(finalValue); 
-        }, 1000);
-        
-    }, 2000);
+        setTimeout(() => handleRollResult(finalValue), 400);
+    }, 1000);
 }
 
 function handleRollResult(roll) {
-    gameState.diceValue = roll;
-    gameState.isProcessing = false; 
+    gameState.diceValue = roll; 
+    gameState.isProcessing = false;
+    if(gameState.mode === 'local') updateUI();
     
-    if(gameState.mode !== 'online') updateUI();
-
     const moves = getPossibleMoves(gameState.turn, roll);
-    if(moves.length === 0) {
-        showToast("No moves possible...");
-        setTimeout(nextTurn, 1500); 
+    
+    if(moves.length === 0) { 
+        showToast("No moves possible..."); 
+        setTimeout(nextTurn, 1000); 
     } else {
-        if(moves.length === 1 && isCurrentPlayerTurn() && gameState.players[gameState.turn].type !== 'bot') {
+        // Auto-move logic for Single Option (Human Only)
+        if(moves.length === 1 && isCurrentPlayerTurn() && gameState.players[gameState.turn].type !== 'bot') { 
             gameState.waitingForMove = true; 
-            renderPieces();
-            setTimeout(() => executeMove(gameState.turn, moves[0]), 500);
-        } else {
+            renderPieces(); 
+            setTimeout(() => executeMove(gameState.turn, moves[0]), 500); 
+        } else { 
             gameState.waitingForMove = true; 
-            renderPieces();
+            renderPieces(); 
         }
         
+        // AI GLITCH FIX
         if(gameState.mode === 'local' && gameState.players[gameState.turn].type === 'bot') {
-            setTimeout(playBotTurn, 800);
+            if(botTimer) clearTimeout(botTimer);
+            botTimer = setTimeout(playBotTurn, 800);
         }
     }
 }
 
 function canMove(pIdx, tIdx, roll) {
-    if(gameState.turn !== pIdx) return false;
-    const p = gameState.pieces[pIdx][tIdx];
+    if(gameState.turn !== pIdx) return false; const p = gameState.pieces[pIdx][tIdx];
     if(p.s === 'WIN') return false; 
-    if(p.s === 'BASE') return roll === 6;
-    if(p.s === 'PATH') return p.p + roll <= 55; 
-    if(p.s === 'HOME') return p.p + roll <= 5;
+    if(p.s === 'BASE') return roll === 6; 
+    if(p.s === 'PATH') return p.p + roll <= 56; 
+    if(p.s === 'HOME') return p.p + roll <= 5; 
     return false;
 }
-
-function getPossibleMoves(pIdx, roll) {
-    return gameState.pieces[pIdx].map((_, i) => i).filter(i => canMove(pIdx, i, roll));
-}
+function getPossibleMoves(pIdx, roll) { return gameState.pieces[pIdx].map((_, i) => i).filter(i => canMove(pIdx, i, roll)); }
 
 async function handleTokenClick(pIdx, tIdx) {
+    if (gameState.mode === 'online' && !isCurrentPlayerTurn()) return;
     if(!gameState.waitingForMove || gameState.isProcessing) return;
     if(!canMove(pIdx, tIdx, gameState.diceValue)) return;
     executeMove(pIdx, tIdx);
@@ -964,69 +785,149 @@ async function handleTokenClick(pIdx, tIdx) {
 
 async function executeMove(pIdx, tIdx) {
     gameState.isProcessing = true;
-    document.querySelectorAll('.token').forEach(t => t.classList.remove('highlight-move'));
+    document.querySelectorAll('.token').forEach(t => t.classList.remove('highlight-move', 'moveable'));
+    let steps = gameState.diceValue; if(gameState.pieces[pIdx][tIdx].s === 'BASE') steps = 1;
+    
+    if(gameState.mode === 'online') {
+        await updateDoc(doc(db, 'ludo_rooms', roomId), { animatingMove: { pIdx, tIdx, steps, id: Date.now() } });
+    } else {
+        await runHopAnimation(pIdx, tIdx, steps);
+        finalizeMove(pIdx, tIdx);
+    }
+}
+
+async function runHopAnimation(pIdx, tIdx, steps) {
     const p = gameState.pieces[pIdx][tIdx];
-    if(p.s === 'BASE') { p.s = 'PATH'; p.p = 0; renderPieces(); playSound('move'); } 
+    let tempP = { s: p.s, p: p.p }; 
+    
+    if(tempP.s === 'BASE') { 
+        tempP.s = 'PATH'; tempP.p = 0; 
+        updateSinglePieceVisual(pIdx, tIdx, tempP); 
+        playSound('move'); 
+        await new Promise(r => setTimeout(r, 200));
+    } else {
+        for(let i=0; i<steps; i++) {
+            if(tempP.s === 'PATH') { 
+                tempP.p++; 
+                if(tempP.p > 50) { tempP.s = 'HOME'; tempP.p -= 51; } 
+            } 
+            else if(tempP.s === 'HOME') { tempP.p++; if(tempP.p === 5) tempP.s = 'WIN'; }
+            
+            updateSinglePieceVisual(pIdx, tIdx, tempP); 
+            playSound('move'); 
+            await new Promise(r => setTimeout(r, 200));
+        }
+    }
+}
+
+function updateSinglePieceVisual(pIdx, tIdx, pieceState) {
+    const id = `token-${pIdx}-${tIdx}`; let el = document.getElementById(id); if (!el) return;
+    let r, c;
+    if(pieceState.s === 'WIN') [r,c] = WIN_POSITIONS[pIdx];
+    else if(pieceState.s === 'BASE') [r,c] = BASE_POSITIONS[pIdx][tIdx];
+    else if(pieceState.s === 'PATH') { 
+        const startIdx = START_INDICES[pIdx]; 
+        const globalIdx = (startIdx + pieceState.p) % 52; 
+        [r,c] = MAIN_PATH[globalIdx]; 
+    }
+    else if(pieceState.s === 'HOME') { [r,c] = HOME_PATHS[pIdx][pieceState.p]; }
+    
+    el.style.gridRow = r; el.style.gridColumn = c; 
+    el.style.transform = `translate(0, 0) scale(1) rotate(${-boardRotation}deg)`;
+}
+
+async function finalizeMove(pIdx, tIdx) {
+    const p = gameState.pieces[pIdx][tIdx];
+    if(p.s === 'BASE') { p.s = 'PATH'; p.p = 0; } 
     else {
         const steps = gameState.diceValue;
         for(let i=0; i<steps; i++) {
-            if(p.s === 'PATH') { p.p++; if(p.p > 50) { p.s = 'HOME'; p.p -= 51; } } 
+            if(p.s === 'PATH') { 
+                p.p++; 
+                if(p.p > 50) { p.s = 'HOME'; p.p -= 51; } 
+            } 
             else if(p.s === 'HOME') { p.p++; if(p.p === 5) p.s = 'WIN'; }
-            renderPieces(); playSound('move'); await new Promise(r => setTimeout(r, 200));
         }
     }
+    
     let bonusTurn = false;
+    let capture = false;
+    
+    // CAPTURE LOGIC
     if(p.s === 'PATH') {
-        const startIdx = START_INDICES[COLORS[pIdx]];
-        const myGlob = (startIdx + p.p) % 52;
-        const allSafe = [1, 14, 27, 40, ...SAFE_SPOTS];
-        if(!allSafe.includes(myGlob)) {
+        const startIdx = START_INDICES[pIdx]; const myGlob = (startIdx + p.p) % 52; 
+        if(!SAFE_SPOTS.includes(myGlob) && ![1,14,27,40].includes(myGlob)) {
             gameState.pieces.forEach((opps, oIdx) => {
                 if(oIdx !== pIdx && gameState.players[oIdx] && gameState.players[oIdx].status === 'active') opps.forEach(op => {
-                    const opStart = START_INDICES[COLORS[oIdx]];
-                    if(op.s === 'PATH' && (opStart + op.p)%52 === myGlob) {
-                        op.s = 'BASE'; op.p = 0; bonusTurn = true; showToast("Captured!"); playSound('win');
+                    const opStart = START_INDICES[oIdx];
+                    if(op.s === 'PATH' && (opStart + op.p)%52 === myGlob) { 
+                        op.s = 'BASE'; op.p = 0; bonusTurn = true; capture = true; showToast("Captured!"); playSound('win'); 
                     }
                 });
             });
         }
     }
-    if(p.s === 'WIN') { checkWin(pIdx); renderPieces(); playSound('win'); showToast("Home!"); bonusTurn = true; }
+    if(p.s === 'WIN') { checkWin(pIdx); playSound('win'); showToast("Home!"); bonusTurn = true; }
     
     gameState.waitingForMove = false;
-    if((gameState.diceValue === 6 || bonusTurn) && gameState.winners.length === 0) {
-        gameState.diceValue = 0; showToast("Bonus Turn!"); gameState.isProcessing = false;
-        if(gameState.mode === 'online') pushGameState();
-        else { 
-            updateUI(); renderPieces(); 
-            if(gameState.mode === 'local' && gameState.players[gameState.turn].type === 'bot') setTimeout(() => performRoll(false), 1000);
-        }
-    } else nextTurn();
-}
+    const isSix = gameState.diceValue === 6;
+    
+    if(gameState.mode === 'local') renderPieces(); 
+    
+    // DICE UNLOCK FIX
+    gameState.isProcessing = false;
+    gameState.waitingForMove = false;
 
-function nextTurn() {
-    gameState.diceValue = 0; gameState.waitingForMove = false; gameState.isProcessing = false;
-    let loops = 0;
-    do { 
-        gameState.turn = (gameState.turn + 1) % 4; 
-        loops++; 
-    } while((!gameState.players[gameState.turn] || gameState.players[gameState.turn].status === 'left' || gameState.winners.includes(gameState.turn)) && loops < 4);
-    checkActivePlayers();
-    if(gameState.mode === 'online') pushGameState();
-    else { 
-        updateUI(); renderPieces(); playSound('turn');
-        if(gameState.mode === 'local' && gameState.players[gameState.turn].type === 'bot') setTimeout(() => performRoll(false), 1000); 
+    if((isSix || bonusTurn) && gameState.winners.length === 0) {
+        showToast("Bonus Turn!"); 
+        gameState.diceValue = 0; 
+
+        if(gameState.mode === 'online') {
+            pushGameState(null); // Clear animation flag
+        } else { 
+            updateUI(); 
+            // AI GLITCH FIX
+            if(gameState.mode === 'local' && gameState.players[gameState.turn].type === 'bot') {
+                if(botTimer) clearTimeout(botTimer);
+                botTimer = setTimeout(() => attemptRoll(), 1000); 
+            }
+        }
+    } else {
+        setTimeout(nextTurn, 500);
     }
 }
 
-function checkActivePlayers() {
-    if(gameState.mode !== 'online') return;
-    const active = gameState.players.filter(p => p && p.status === 'active');
-    if(active.length === 1 && gameState.players.filter(p => p).length > 1) {
-        const winner = active[0];
-        document.getElementById('winner-name').innerText = `${winner.name} Wins!`;
-        document.getElementById('winner-name').innerHTML += `<div class="text-sm text-slate-400 mt-2">Others left the game</div>`;
-        document.getElementById('victory-modal').classList.remove('hidden');
+function nextTurn() {
+    gameState.diceValue = 0; 
+    gameState.waitingForMove = false; 
+    gameState.isProcessing = false;
+
+    let current = gameState.turn;
+    let loops = 0;
+    do {
+        current = (current + 1) % 4;
+        loops++;
+    } while (
+        loops < 4 && 
+        (!gameState.players[current] || 
+         gameState.players[current].status === 'left' || 
+         gameState.winners.includes(current))
+    );
+
+    gameState.turn = current;
+    
+    checkActivePlayers();
+    if(gameState.mode === 'online') {
+        pushGameState(null); // Clear animation flag
+    } else { 
+        updateUI(); 
+        renderPieces(); 
+        playSound('turn');
+        // AI GLITCH FIX
+        if(gameState.mode === 'local' && gameState.players[gameState.turn].type === 'bot') {
+            if(botTimer) clearTimeout(botTimer);
+            botTimer = setTimeout(() => attemptRoll(), 1000); 
+        }
     }
 }
 
@@ -1035,6 +936,7 @@ function playBotTurn() {
     if(moves.length > 0) {
         let bestMove = moves[0];
         let maxScore = -1000;
+        
         moves.forEach(mIdx => {
             const score = evaluateMoveScore(gameState.turn, mIdx, gameState.diceValue);
             if(score > maxScore) { maxScore = score; bestMove = mIdx; }
@@ -1051,14 +953,16 @@ function evaluateMoveScore(pIdx, tIdx, roll) {
     let isHome = false, isWin = false;
     if(p.s === 'PATH' && nextP > 50) { isHome = true; nextP -= 51; } else if(p.s === 'HOME') { if(nextP === 5) isWin = true; }
     if(isWin) return 1000; if(isHome) return 50;
-    const startIdx = START_INDICES[COLORS[pIdx]];
+    
+    const startIdx = START_INDICES[pIdx];
     const targetGlob = (startIdx + nextP) % 52;
     const allSafe = [1, 14, 27, 40, ...SAFE_SPOTS];
+    
     if(!allSafe.includes(targetGlob)) {
         let capture = false;
         gameState.pieces.forEach((opps, oIdx) => {
             if(oIdx !== pIdx && gameState.players[oIdx] && gameState.players[oIdx].status === 'active') opps.forEach(op => {
-                const opStart = START_INDICES[COLORS[oIdx]];
+                const opStart = START_INDICES[oIdx];
                 if(op.s === 'PATH' && (opStart + op.p)%52 === targetGlob) capture = true;
             });
         });
@@ -1069,16 +973,21 @@ function evaluateMoveScore(pIdx, tIdx, roll) {
     return score;
 }
 
+function checkActivePlayers() {
+    if(gameState.mode !== 'online') return;
+    const active = gameState.players.filter(p => p && p.status === 'active');
+    if(active.length === 1 && gameState.players.filter(p => p).length > 1) {
+        const winner = active[0]; document.getElementById('winner-name').innerText = `${winner.name} Wins!`; document.getElementById('victory-modal').classList.remove('hidden');
+    }
+}
+
 function isCurrentPlayerTurn() {
     if(gameState.mode === 'local') return gameState.players[gameState.turn]?.type === 'human';
     return gameState.players[gameState.turn]?.id === myPlayerId;
 }
 
 function checkWin(pIdx) {
-    if(gameState.pieces[pIdx].every(p => p.s === 'WIN')) {
-        gameState.winners.push(pIdx); document.getElementById('winner-name').innerText = `${gameState.players[pIdx].name} Wins!`;
-        document.getElementById('victory-modal').classList.remove('hidden');
-    }
+    if(gameState.pieces[pIdx].every(p => p.s === 'WIN')) { gameState.winners.push(pIdx); document.getElementById('winner-name').innerText = `${gameState.players[pIdx].name} Wins!`; document.getElementById('victory-modal').classList.remove('hidden'); }
 }
 
 function showToast(msg) {
@@ -1087,77 +996,31 @@ function showToast(msg) {
 }
 
 window.showGiveUp = () => document.getElementById('give-up-modal').classList.remove('hidden');
-
 window.confirmGiveUp = async () => { 
-    document.getElementById('give-up-modal').classList.add('hidden'); 
-    localStorage.removeItem('ludo_current_room');
-    cleanupRTC();
-    
+    document.getElementById('give-up-modal').classList.add('hidden'); localStorage.removeItem('ludo_current_room'); cleanupRTC();
     if(gameState.mode === 'online' && roomId && myPlayerId) {
-         try {
-             const ref = doc(db, 'ludo_rooms', roomId);
-             const d = await getDoc(ref);
-             if(d.exists()) {
-                 const plList = d.data().players;
-                 const myIdx = plList.findIndex(p => p.id === myPlayerId);
-                 if(myIdx !== -1) {
-                     plList[myIdx].status = 'left';
-                     await updateDoc(ref, {
-                        players: plList,
-                        chat: arrayUnion({name: 'System', color: -1, text: `${plList[myIdx].name} left the game.`})
-                     });
-                 }
-             }
+         try { const ref = doc(db, 'ludo_rooms', roomId); const d = await getDoc(ref);
+             if(d.exists()) { const plList = d.data().players; const myIdx = plList.findIndex(p => p.id === myPlayerId);
+                 if(myIdx !== -1) { plList[myIdx].status = 'left'; await updateDoc(ref, { players: plList, chat: arrayUnion({name: 'System', color: -1, text: `${plList[myIdx].name} left the game.`}) }); } }
          } catch(e) { console.log(e); }
     }
-    
-    showToast("You left the game"); 
-    setTimeout(() => window.exitGame(), 500); 
+    showToast("You left the game"); setTimeout(() => window.exitGame(), 500); 
 };
 
 window.sendChat = async () => {
-    const input = document.getElementById('chat-input');
-    const txt = input.value.trim();
-    if(!txt) return;
-    input.value = ''; 
-    
-    if(gameState.mode === 'local') { 
-        spawnFloatingBubble({name: currentUser.name || 'You', text: txt});
-        return; 
-    }
-    
-    if(!roomId) return;
-    const p = gameState.players.find(pl => pl?.id === myPlayerId);
-    await updateDoc(doc(db, 'ludo_rooms', roomId), { chat: arrayUnion({name: p ? p.name : 'User', color: p ? p.color : -1, text: txt}) });
+    const input = document.getElementById('chat-input'); const txt = input.value.trim(); if(!txt) return; input.value = ''; 
+    const msgData = { name: currentUser.name || 'You', text: txt, color: gameState.mode==='local'?0:myColorIndex, id: Date.now() };
+    if(gameState.mode === 'local') { spawnFloatingBubble(msgData); return; }
+    if(!roomId) return; const p = gameState.players.find(pl => pl?.id === myPlayerId);
+    msgData.name = p ? p.name : 'User'; msgData.color = p ? p.color : -1;
+    await updateDoc(doc(db, 'ludo_rooms', roomId), { chat: arrayUnion(msgData) });
 };
 window.handleChatKey = (e) => { if(e.key === 'Enter') window.sendChat(); }
 
-function renderChat(messages) {
-    if (!messages) return;
-    const newCount = messages.length;
-    if (newCount > gameState.chatCount) {
-        messages.slice(gameState.chatCount).forEach(msg => spawnFloatingBubble(msg));
-        gameState.chatCount = newCount;
-    }
-}
-
-window.copyRoomLink = () => {
-    const url = window.location.origin + window.location.pathname + '?room=' + roomId;
-    navigator.clipboard.writeText(url).then(() => showToast("Link Copied!"));
-};
-window.exitGame = async () => {
-    localStorage.removeItem('ludo_current_room');
-    if (roomUnsubscribe) roomUnsubscribe();
-    cleanupRTC();
-    gameState.mode = null;
-    showScreen('main-menu');
-    document.querySelectorAll('.token').forEach(el => el.remove());
-};
-window.attemptRoll = attemptRoll;
-window.showOnlineMenu = () => showScreen('online-menu');
-window.backToMain = () => showScreen('main-menu');
-window.toggleMic = window.toggleMic; 
-window.toggleSpeaker = window.toggleSpeaker; 
+function renderChat(messages) { if (!messages) return; const newCount = messages.length; if (newCount > gameState.chatCount) { messages.slice(gameState.chatCount).forEach(msg => spawnFloatingBubble(msg)); gameState.chatCount = newCount; } }
+window.copyRoomLink = () => { const url = window.location.origin + window.location.pathname + '?room=' + roomId; navigator.clipboard.writeText(url).then(() => showToast("Link Copied!")); };
+window.exitGame = async () => { localStorage.removeItem('ludo_current_room'); if (roomUnsubscribe) roomUnsubscribe(); cleanupRTC(); gameState.mode = null; showScreen('main-menu'); document.querySelectorAll('.token').forEach(el => el.remove()); };
+window.attemptRoll = attemptRoll; window.showOnlineMenu = () => showScreen('online-menu'); window.backToMain = () => showScreen('main-menu'); window.toggleMic = window.toggleMic; window.toggleSpeaker = window.toggleSpeaker; 
 </script>
 </body>
 </html>
